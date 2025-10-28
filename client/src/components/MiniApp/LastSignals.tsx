@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import api from '../../api/axios';
 import { useAuthStore } from '@/store/auth';
-import { Signal } from '@/interfaces';
+import type {Signal} from '@/interfaces';
 import SignalCard from './SignalCard';
 
 interface SignalsProps {

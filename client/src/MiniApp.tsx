@@ -8,6 +8,7 @@ import Auth from './components/MiniApp/Auth.tsx';
 import { useAuthStore } from './store/auth';
 import api from '../src/api/axios';
 import SignalModal from './components/MiniApp/SignalModal';
+import {config} from "@/config/constants.ts";
 
 const LastSignals = lazy(() => import('./components/MiniApp/LastSignals'));
 const SignalCircle = lazy(() => import('./components/MiniApp/SignalCircle'));
@@ -25,7 +26,7 @@ const MiniApp: React.FC = () => {
     const [refreshSignals, setRefreshSignals] = useState(false);
     const [readySince, setReadySince] = useState<number | null>(null);
     const [requestTime, setRequestTime] = useState<number | null>(null);
-    const [timer, setTimer] = useState<number>(0);
+    const [, setTimer] = useState<number>(0);
     const { user, token, setUser } = useAuthStore();
 
     useEffect(() => {
@@ -78,9 +79,6 @@ const MiniApp: React.FC = () => {
                 });
                 const { isPending, requestTime: serverRequestTime } = response.data;
 
-                const maxWaitTime = 310000;
-                const maxReadyTime = 30000;
-
                 if (isPending) {
                     setSignalState('waiting');
                     setRequestTime(serverRequestTime);
@@ -94,7 +92,6 @@ const MiniApp: React.FC = () => {
                         params: { page: 1, limit: 10 },
                     });
                     const { data: signals } = signalsResponse.data;
-                    console.log(signals);
                     const activeSignal = signals.find((s: any) => s.status === 'active' && s.user.id === user.id);
                     if (activeSignal) {
                         const now = Date.now();
@@ -112,13 +109,13 @@ const MiniApp: React.FC = () => {
                         localStorage.setItem('signalRequestTime', serverRequestTime.toString());
                     } else {
                         const storedRequestTime = localStorage.getItem('signalRequestTime');
-                        if (storedRequestTime && Date.now() - parseInt(storedRequestTime) > maxWaitTime) {
+                        if (storedRequestTime && Date.now() - parseInt(storedRequestTime) > config.MAX_WAIT_TIME_SIGNAL) {
                             await api.post('/signals/clear-request', {}, {
                                 headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
                             });
                             resetSignalState();
                             alert('Signal request timed out. Please try again.');
-                        } else if (!activeSignal && signalState === 'ready' && readySince && Date.now() - readySince > maxReadyTime) {
+                        } else if (!activeSignal && signalState === 'ready' && readySince && Date.now() - readySince > config.MAX_WAIT_TIME_SIGNAL) {
                             resetSignalState();
                             alert('Signal confirmation time expired. Please request a new signal.');
                         } else if (!activeSignal) {

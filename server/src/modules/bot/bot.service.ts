@@ -33,7 +33,7 @@ export class BotService implements OnModuleInit {
       };
       await this.findOrCreateUser(userData);
 
-      const miniAppUrl = config.MINI_APP_URL;
+      const miniAppUrl = config.WEB_APP_URL;
       if (!miniAppUrl) throw new Error('Web app URL is not defined');
 
       const replyMarkup = {

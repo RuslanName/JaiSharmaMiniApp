@@ -1,4 +1,4 @@
-import { DataProvider } from 'react-admin';
+import type {DataProvider} from 'react-admin';
 import api from '../api/axios';
 import Cookies from 'js-cookie';
 import usersProvider from './usersProvider';

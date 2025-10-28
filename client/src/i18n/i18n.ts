@@ -1,7 +1,7 @@
-import { I18nProvider } from 'react-admin';
+import type {I18nProvider} from 'react-admin';
 
 export const i18nProvider: I18nProvider = {
-    translate: (key: string, options?: any) => {
+    translate: (key: string) => {
         const translations: Record<string, Record<string, string>> = {
             ru: {
                 'ra.action.bulk_actions': 'Множественное действие',

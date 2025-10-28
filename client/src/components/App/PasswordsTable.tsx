@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     List,
     Datagrid,
@@ -12,12 +11,12 @@ import {
     TextInput,
     ReferenceInput,
     SelectInput,
-    ListProps,
-    EditProps,
-    CreateProps,
+    type ListProps,
+    type EditProps,
+    type CreateProps,
     FunctionField,
 } from 'react-admin';
-import {Password, User} from '@/interfaces';
+import type {Password, User} from '@/interfaces';
 import { required } from 'react-admin';
 
 const passwordFilters = [

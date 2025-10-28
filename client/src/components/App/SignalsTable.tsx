@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     List,
     Datagrid,
@@ -11,13 +10,13 @@ import {
     NumberInput,
     ReferenceInput,
     SelectInput,
-    ListProps,
-    EditProps,
-    CreateProps,
+    type ListProps,
+    type EditProps,
+    type CreateProps,
     FunctionField,
     TextInput,
 } from 'react-admin';
-import { Signal, User } from '@/interfaces';
+import type {Signal, User} from '@/interfaces';
 import { required } from 'react-admin';
 import { SignalStatus } from '@/enums';
 

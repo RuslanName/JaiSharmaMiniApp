@@ -9,8 +9,8 @@ import {
     BooleanInput,
     Edit,
     SimpleForm,
-    ListProps,
-    EditProps,
+    type ListProps,
+    type EditProps,
     FunctionField,
     EditButton,
     DeleteButton,
@@ -21,7 +21,7 @@ import {
     ReferenceInput,
     SelectInput,
 } from 'react-admin';
-import { User, Password } from '@/interfaces';
+import type {User, Password} from '@/interfaces';
 import { UserRole } from '@/enums';
 import { required } from 'react-admin';
 

@@ -1,8 +1,8 @@
-import { AuthProvider } from 'react-admin';
+import type {AuthProvider} from 'react-admin';
 import api from '../api/axios';
 import { jwtDecode } from 'jwt-decode';
 import Cookies from 'js-cookie';
-import { JwtPayload, User } from '@/interfaces';
+import type {JwtPayload, User} from '@/interfaces';
 import { config } from "@/config/constants";
 
 const authProvider: AuthProvider = {

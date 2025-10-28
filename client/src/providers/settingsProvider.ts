@@ -1,5 +1,5 @@
 import api from '../api/axios';
-import { DataProvider, PaginationPayload } from 'react-admin';
+import type {DataProvider, PaginationPayload} from 'react-admin';
 import { useAuthStore } from '@/store/auth';
 
 export const SettingNameTranslations: Record<string, string> = {

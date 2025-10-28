@@ -1,6 +1,18 @@
-import React from 'react';
-import { List, Datagrid, TextField, EditButton, Edit, SimpleForm, TextInput, ListProps, EditProps, FunctionField, SaveButton, Toolbar } from 'react-admin';
-import { Setting } from '@/interfaces';
+import {
+    List,
+    Datagrid,
+    TextField,
+    EditButton,
+    Edit,
+    SimpleForm,
+    TextInput,
+    type ListProps,
+    type EditProps,
+    FunctionField,
+    SaveButton,
+    Toolbar
+} from 'react-admin';
+import type {Setting} from '@/interfaces';
 import { SettingNameTranslations } from '@/providers/settingsProvider';
 import { SettingKey } from '@/enums';
 

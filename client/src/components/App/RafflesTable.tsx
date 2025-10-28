@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     List,
     Datagrid,
@@ -9,13 +8,13 @@ import {
     Create,
     SimpleForm,
     DateInput,
-    ListProps,
-    EditProps,
-    CreateProps,
+    type ListProps,
+    type EditProps,
+    type CreateProps,
     FunctionField,
     TextInput,
 } from 'react-admin';
-import { Raffle } from '@/interfaces';
+import type {Raffle} from '@/interfaces';
 
 export const RafflesList = (props: ListProps<Raffle>) => (
     <List {...props} title="Розыгрыши" pagination={<></>} perPage={25}>

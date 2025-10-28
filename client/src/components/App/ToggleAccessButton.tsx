@@ -1,6 +1,5 @@
-import React from 'react';
 import { Button, useDataProvider, useNotify, useRefresh } from 'react-admin';
-import { User } from '@/interfaces';
+import type {User} from '@/interfaces';
 
 interface ToggleAccessButtonProps {
     record?: User;

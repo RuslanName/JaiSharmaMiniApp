@@ -1,4 +1,4 @@
-import { DataProvider, PaginationPayload } from 'react-admin';
+import type {DataProvider, PaginationPayload} from 'react-admin';
 import { createBaseProvider } from './baseProvider';
 import api from '../api/axios';
 import { useAuthStore } from '@/store/auth';

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Admin, Resource } from 'react-admin';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import authProvider from './providers/authProvider';

@@ -20,15 +20,16 @@ services:
     working_dir: /app
     volumes:
       - ./client:/app
+      - ./client/.env:/app/.env
     command: sh -c "npm ci && npm run build"
 
   server:
     build:
-      context: .
+      context: ./server
       dockerfile: Dockerfile
     restart: always
     env_file:
-      - ./.env
+      - ./server/.env
     environment:
       DB_URL: db
       NODE_ENV: production

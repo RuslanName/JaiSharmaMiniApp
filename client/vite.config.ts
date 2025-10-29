@@ -7,7 +7,6 @@ const env = loadEnv('development', process.cwd(), '');
 
 export default defineConfig({
     plugins: [react()],
-    build: { outDir: 'build' },
     base: '/',
     server: {
         host: true,

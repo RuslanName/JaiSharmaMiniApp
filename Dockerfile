@@ -1,11 +1,11 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-COPY package*.json ./
+COPY server/package*.json ./
 RUN npm ci
 
-COPY src ./src
-COPY tsconfig.json ./tsconfig.json
+COPY server/src ./src
+COPY server/tsconfig.json ./tsconfig.json
 
 RUN npm run build
 

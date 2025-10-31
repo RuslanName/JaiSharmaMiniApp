@@ -158,11 +158,6 @@ const MiniApp: React.FC = () => {
         return () => clearInterval(interval);
     }, [user, token, refreshSignals]);
 
-    useEffect(() => {
-        const interval = setInterval(() => {}, 1000);
-        return () => clearInterval(interval);
-    }, []);
-
     const handleSignalClick = async () => {
         if (!user || !token) return;
 
@@ -247,7 +242,7 @@ const MiniApp: React.FC = () => {
                 <PlayerInfo onAddEnergy={handleAddEnergy} />
                 <ProgressBar />
                 <Suspense fallback={<div>Loading components...</div>}>
-                    <LastSignals timezone={timezone} refresh={refreshSignals} />
+                    <LastSignals timezone={timezone} />
                     <SignalCircle
                         onClick={handleSignalClick}
                         signalState={signalState}

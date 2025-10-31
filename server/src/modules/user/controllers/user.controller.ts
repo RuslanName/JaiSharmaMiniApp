@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   Param,
   Patch,
   Post,
@@ -35,6 +36,7 @@ export class UserController {
   }
 
   @Get('me')
+  @Header('Cache-Control', 'public, max-age=3')
   async getCurrentUser(@Req() req: AuthenticatedRequest) {
     const userId = req.user.id;
     return await this.userService.findOne(userId);

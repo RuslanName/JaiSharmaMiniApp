@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   Param,
   Patch,
   Post,
@@ -34,6 +35,7 @@ export class SignalController {
   }
 
   @Get('status')
+  @Header('Cache-Control', 'public, max-age=3')
   async getSignalRequestStatus(@Req() req: AuthenticatedRequest) {
     return await this.signalService.getSignalRequestStatus(req.user.id);
   }
@@ -51,6 +53,7 @@ export class SignalController {
   }
 
   @Post('request')
+  @Header('Cache-Control', 'public, max-age=3')
   async requestSignal(@Req() req: AuthenticatedRequest) {
     return await this.signalService.requestSignal(req.user.id);
   }

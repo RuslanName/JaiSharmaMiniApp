@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:16-alpine
@@ -37,7 +35,7 @@ services:
       DB_HOST: db
       NODE_ENV: production
       PORT: 5000
-      PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
+      PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium
     depends_on:
       db:
         condition: service_healthy
@@ -45,6 +43,12 @@ services:
         condition: service_completed_successfully
     volumes:
       - ./client/dist:/app/client-dist:ro
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
 
   nginx:
     image: nginx:alpine

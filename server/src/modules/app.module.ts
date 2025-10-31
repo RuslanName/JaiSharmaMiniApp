@@ -15,7 +15,7 @@ const isDev = config.MODE === 'dev';
   imports: [
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: config.DB_URL,
+      host: config.DB_HOST,
       port: 5432,
       username: config.DB_USERNAME,
       password: config.DB_PASSWORD,

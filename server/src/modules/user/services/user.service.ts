@@ -139,7 +139,7 @@ export class UserService {
     const { page = 1, limit = 10 } = paginationDto;
     const skip = (page - 1) * limit;
 
-    const [data, total] = await this.userRepository.findAndCount({
+    const [data] = await this.userRepository.findAndCount({
       order: { energy: 'DESC' },
       skip,
       take: limit,
@@ -150,33 +150,34 @@ export class UserService {
     const maxEnergy = maxEnergySetting ? Number(maxEnergySetting.value) : 100;
 
     const enrichedData = data
-      .filter((user) => user.signals.length > 0) // Исключаем пользователей без сигналов
       .map((user) => {
-        const bestSignal = user.signals
-          .filter(
-            (signal) =>
-              (signal.status as SignalStatus) === SignalStatus.COMPLETED,
-          )
-          .reduce(
-            (max, signal) => (signal.amount > max.amount ? signal : max),
-            {
-              amount: 0,
-              id: 0,
-              multiplier: 0,
-              status: SignalStatus.COMPLETED,
-              created_at: new Date(),
-              user: null,
-            },
-          );
+        const completedSignals = user.signals.filter(
+          (signal) =>
+            (signal.status as SignalStatus) === SignalStatus.COMPLETED,
+        );
+
+        if (completedSignals.length === 0) {
+          return null;
+        }
+
+        const bestSignal = completedSignals.reduce(
+          (max, signal) => (signal.amount > max.amount ? signal : max),
+          completedSignals[0],
+        );
+
+        if (bestSignal.amount <= 0) {
+          return null;
+        }
 
         return {
           ...user,
           maxEnergy,
-          best_signal: bestSignal.amount > 0 ? bestSignal : null,
+          best_signal: bestSignal,
         };
-      });
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
 
-    return { data: enrichedData, total };
+    return { data: enrichedData, total: enrichedData.length };
   }
 
   async delete(id: number): Promise<void> {

@@ -24,7 +24,7 @@ services:
     working_dir: /app
     volumes:
       - ./client:/app
-    command: sh -c "npm ci && npm run build"
+    command: sh -c "npm install && npm run build"
 
   server:
     build:

@@ -42,8 +42,6 @@ export class RoundService {
           '--disable-background-timer-throttling',
           '--disable-renderer-backgrounding',
           '--disable-features=site-isolation-trials',
-          '--disable-features=TranslateUI',
-          '--disable-ipc-flooding-protection',
         ],
       });
 
@@ -85,8 +83,9 @@ export class RoundService {
           const rounds: { round: string; multiplier: number }[] = [];
 
           for (let i = 0; i < Math.min(payouts.length, max); i++) {
-            const payout = payouts[i] as HTMLElement;
-            payout.click();
+            const payout = payouts[i];
+            payout.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
             await new Promise((r) => setTimeout(r, 500));
 
             const modal = document.querySelector('div.modal-dialog.modal-lg');
@@ -100,14 +99,17 @@ export class RoundService {
                 .querySelector('div.bubble-multiplier')
                 ?.textContent?.trim() || '1.00';
             let multiplier = parseFloat(multText) || 1.0;
-            if (multiplier > 1000) multiplier = Number(multiplier.toFixed(2));
+            if ((multText.split('.')[1] || '').length > 2) {
+              multiplier = Number(multiplier.toFixed(2));
+            }
 
             rounds.push({ round, multiplier });
 
             const close = modal.querySelector('button.close');
             if (close) {
-              close.dispatchEvent(new Event('click', { bubbles: true }));
+              close.dispatchEvent(new MouseEvent('click', { bubbles: true }));
             }
+
             await new Promise((r) => setTimeout(r, 300));
           }
           return rounds;
@@ -153,10 +155,12 @@ export class RoundService {
       if (browser) {
         try {
           const pages = await browser.pages();
-          await Promise.all(pages.map((p) => p.close().catch(() => {})));
-          await browser.close();
+          for (const p of pages) {
+            await p.close().catch(() => {});
+          }
+          await browser.close().catch(() => {});
         } catch (e) {
-          this.logger.warn('Error closing browser', e);
+          this.logger.warn('Error during browser cleanup', e);
         }
       }
       this.isRunning = false;

@@ -248,7 +248,9 @@ export class SignalService {
         await this.botService.sendMessage(chatId, 'Signal is coming soon');
       } catch (error: unknown) {
         console.log(
-          `Failed to send "Signal is coming soon" message to user ${userId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          `Failed to send "Signal is coming soon" message to user ${userId}: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`,
         );
       }
     }
@@ -282,14 +284,18 @@ export class SignalService {
     );
 
     let selectedMultiplier: number;
+
     if (suitableRounds.length > 0) {
       const randomIndex = Math.floor(Math.random() * suitableRounds.length);
       selectedMultiplier = suitableRounds[randomIndex].multiplier;
     } else {
-      selectedMultiplier =
+      const randomValue =
         Math.random() * (maxIssuingCoefficient - minIssuingCoefficient) +
         minIssuingCoefficient;
+      selectedMultiplier = Math.round(randomValue * 100) / 100;
     }
+
+    selectedMultiplier = Math.round(selectedMultiplier * 100) / 100;
 
     signal.multiplier = selectedMultiplier;
     signal.status = SignalStatus.ACTIVE;
@@ -304,7 +310,9 @@ export class SignalService {
         );
       } catch (error: unknown) {
         console.log(
-          `Failed to send signal received message to user ${userId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          `Failed to send signal received message to user ${userId}: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`,
         );
       }
     }
@@ -342,9 +350,12 @@ export class SignalService {
     return signal;
   }
 
-  async getSignalRequestStatus(
-    userId: number,
-  ): Promise<{ isPending: boolean; requestTime?: number }> {
+  async getSignalRequestStatus(userId: number): Promise<{
+    isPending: boolean;
+    requestTime?: number;
+    activatedAt?: number;
+    confirmTimeout?: number;
+  }> {
     const user = await this.validateUser(userId);
     if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found`);
@@ -363,10 +374,20 @@ export class SignalService {
     const activeSignal = await this.signalRepository.findOne({
       where: { user: { id: userId }, status: SignalStatus.ACTIVE },
     });
-    if (activeSignal) {
+
+    if (activeSignal && activeSignal.activated_at) {
+      const timeoutSetting = await this.settingService.findByKey(
+        'signal_confirm_timeout',
+      );
+      const confirmTimeout = timeoutSetting
+        ? parseInt(timeoutSetting.value as string, 10)
+        : 30;
+
       return {
         isPending: false,
         requestTime: activeSignal.created_at.getTime(),
+        activatedAt: activeSignal.activated_at.getTime(),
+        confirmTimeout: confirmTimeout * 1000,
       };
     }
 

@@ -8,7 +8,6 @@ import Auth from './components/MiniApp/Auth.tsx';
 import { useAuthStore } from './store/auth';
 import api from '../src/api/axios';
 import SignalModal from './components/MiniApp/SignalModal';
-import {config} from "@/config/constants.ts";
 
 const LastSignals = lazy(() => import('./components/MiniApp/LastSignals'));
 const SignalCircle = lazy(() => import('./components/MiniApp/SignalCircle'));
@@ -26,7 +25,7 @@ const MiniApp: React.FC = () => {
     const [refreshSignals, setRefreshSignals] = useState(false);
     const [readySince, setReadySince] = useState<number | null>(null);
     const [requestTime, setRequestTime] = useState<number | null>(null);
-    const [, setTimer] = useState<number>(0);
+    const [confirmTimeout, setConfirmTimeout] = useState<number>(30000);
     const { user, token, setUser } = useAuthStore();
 
     useEffect(() => {
@@ -77,50 +76,42 @@ const MiniApp: React.FC = () => {
                 const response = await api.get('/signals/status', {
                     headers: { Authorization: `Bearer ${token}` },
                 });
-                const { isPending, requestTime: serverRequestTime } = response.data;
+                const { isPending, requestTime: serverRequestTime, activatedAt, confirmTimeout: serverConfirmTimeout } = response.data;
 
                 if (isPending) {
                     setSignalState('waiting');
                     setRequestTime(serverRequestTime);
                     setReadySince(null);
+                    setConfirmTimeout(30000);
                     localStorage.setItem('signalState', 'waiting');
                     localStorage.setItem('signalRequestTime', serverRequestTime.toString());
                     localStorage.removeItem('readySince');
+                    localStorage.removeItem('confirmTimeout');
                 } else {
                     const signalsResponse = await api.get('/signals', {
                         headers: { Authorization: `Bearer ${token}` },
                         params: { page: 1, limit: 10 },
                     });
                     const { data: signals } = signalsResponse.data;
-                    const activeSignal = signals.find((s: any) => s.status === 'active' && s.user.id === user.id);
-                    if (activeSignal) {
-                        const now = Date.now();
-                        if (signalState !== 'ready') {
-                            setSignalState('ready');
-                            setReadySince(now);
-                            setRequestTime(serverRequestTime);
-                            localStorage.setItem('readySince', now.toString());
-                        }
+                    const activeSignal = signals.find(
+                        (s: any) => s.status === 'active' && s.user.id === user.id,
+                    );
+
+                    if (activeSignal && activatedAt) {
+                        setSignalState('ready');
                         setSignalId(activeSignal.id);
                         setSignalData(activeSignal);
+                        setReadySince(activatedAt);
+                        setRequestTime(serverRequestTime || activatedAt);
+                        setConfirmTimeout(serverConfirmTimeout || 30000);
                         localStorage.setItem('signalState', 'ready');
                         localStorage.setItem('signalId', activeSignal.id.toString());
                         localStorage.setItem('signalData', JSON.stringify(activeSignal));
-                        localStorage.setItem('signalRequestTime', serverRequestTime.toString());
+                        localStorage.setItem('readySince', activatedAt.toString());
+                        localStorage.setItem('confirmTimeout', (serverConfirmTimeout || 30000).toString());
+                        localStorage.setItem('signalRequestTime', (serverRequestTime || activatedAt).toString());
                     } else {
-                        const storedRequestTime = localStorage.getItem('signalRequestTime');
-                        if (storedRequestTime && Date.now() - parseInt(storedRequestTime) > config.MAX_WAIT_TIME_SIGNAL) {
-                            await api.post('/signals/clear-request', {}, {
-                                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-                            });
-                            resetSignalState();
-                            alert('Signal request timed out. Please try again.');
-                        } else if (!activeSignal && signalState === 'ready' && readySince && Date.now() - readySince > config.MAX_WAIT_TIME_SIGNAL) {
-                            resetSignalState();
-                            alert('Signal confirmation time expired. Please request a new signal.');
-                        } else if (!activeSignal) {
-                            resetSignalState();
-                        }
+                        resetSignalState();
                     }
                 }
             } catch (error: any) {
@@ -134,40 +125,32 @@ const MiniApp: React.FC = () => {
             setSignalData(null);
             setReadySince(null);
             setRequestTime(null);
+            setConfirmTimeout(30000);
             localStorage.removeItem('signalState');
             localStorage.removeItem('signalId');
             localStorage.removeItem('signalData');
             localStorage.removeItem('signalRequestTime');
             localStorage.removeItem('readySince');
+            localStorage.removeItem('confirmTimeout');
         };
 
-        const storedSignalState = localStorage.getItem('signalState');
-        const storedSignalId = localStorage.getItem('signalId');
-        const storedSignalData = localStorage.getItem('signalData');
-        const storedRequestTime = localStorage.getItem('signalRequestTime');
-        const storedReadySince = localStorage.getItem('readySince');
-        const maxWaitTime = 310000;
-        const maxReadyTime = 30000;
+        const storedState = localStorage.getItem('signalState');
+        const storedId = localStorage.getItem('signalId');
+        const storedData = localStorage.getItem('signalData');
+        const storedReqTime = localStorage.getItem('signalRequestTime');
+        const storedReady = localStorage.getItem('readySince');
+        const storedTimeout = localStorage.getItem('confirmTimeout');
 
-        if (storedSignalState === 'ready' && storedSignalId && storedSignalData && storedReadySince) {
-            const elapsed = Date.now() - parseInt(storedReadySince);
-            if (elapsed <= maxReadyTime) {
-                setSignalState('ready');
-                setSignalId(parseInt(storedSignalId));
-                setSignalData(JSON.parse(storedSignalData));
-                setReadySince(parseInt(storedReadySince));
-                setRequestTime(parseInt(storedRequestTime || '0'));
-            } else {
-                resetSignalState();
-            }
-        } else if (storedSignalState === 'waiting' && storedRequestTime) {
-            const elapsed = Date.now() - parseInt(storedRequestTime);
-            if (elapsed <= maxWaitTime) {
-                setSignalState('waiting');
-                setRequestTime(parseInt(storedRequestTime));
-            } else {
-                resetSignalState();
-            }
+        if (storedState === 'ready' && storedId && storedData && storedReady && storedTimeout) {
+            setSignalState('ready');
+            setSignalId(parseInt(storedId));
+            setSignalData(JSON.parse(storedData));
+            setReadySince(parseInt(storedReady));
+            setRequestTime(parseInt(storedReqTime || '0'));
+            setConfirmTimeout(parseInt(storedTimeout));
+        } else if (storedState === 'waiting' && storedReqTime) {
+            setSignalState('waiting');
+            setRequestTime(parseInt(storedReqTime));
         }
 
         pollSignalStatus();
@@ -176,17 +159,12 @@ const MiniApp: React.FC = () => {
     }, [user, token, refreshSignals]);
 
     useEffect(() => {
-        const timerInterval = setInterval(() => {
-            setTimer((prev) => prev + 1);
-        }, 1000);
-        return () => clearInterval(timerInterval);
+        const interval = setInterval(() => {}, 1000);
+        return () => clearInterval(interval);
     }, []);
 
     const handleSignalClick = async () => {
-        if (!user || !token) {
-            console.error('User or token not available');
-            return;
-        }
+        if (!user || !token) return;
 
         if (!user.password) {
             setIsSignalModalOpen(true);
@@ -199,15 +177,9 @@ const MiniApp: React.FC = () => {
                 return;
             }
             try {
-                await api.post('/signal/request', {}, {
+                await api.post('/signals/request', {}, {
                     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
                 });
-                setSignalState('waiting');
-                setRequestTime(Date.now());
-                setReadySince(null);
-                localStorage.setItem('signalState', 'waiting');
-                localStorage.setItem('signalRequestTime', Date.now().toString());
-                localStorage.removeItem('readySince');
             } catch (error: any) {
                 console.error('Error requesting signal:', error);
                 alert(error.response?.data?.message || 'Failed to request signal');
@@ -219,49 +191,24 @@ const MiniApp: React.FC = () => {
                     params: { page: 1, limit: 10 },
                 });
                 const { data: signals } = signalsResponse.data;
-                const activeSignal = signals.find((s: any) => s.id === signalId && s.status === 'active' && s.user.id === user.id);
+                const activeSignal = signals.find(
+                    (s: any) => s.id === signalId && s.status === 'active' && s.user.id === user.id,
+                );
                 if (!activeSignal) {
-                    setSignalState('idle');
-                    setSignalId(null);
-                    setSignalData(null);
-                    setReadySince(null);
-                    setRequestTime(null);
-                    localStorage.removeItem('signalState');
-                    localStorage.removeItem('signalId');
-                    localStorage.removeItem('signalData');
-                    localStorage.removeItem('signalRequestTime');
-                    localStorage.removeItem('readySince');
+                    resetSignalState();
                     alert('Signal is no longer valid. Please request a new signal.');
                     return;
                 }
 
-                await api.post(`/signal/claim/${signalId}`, {}, {
+                await api.post(`/signals/claim/${signalId}`, {}, {
                     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
                 });
-                setSignalState('idle');
-                setSignalId(null);
-                setSignalData(null);
-                setReadySince(null);
-                setRequestTime(null);
-                localStorage.removeItem('signalState');
-                localStorage.removeItem('signalId');
-                localStorage.removeItem('signalData');
-                localStorage.removeItem('signalRequestTime');
-                localStorage.removeItem('readySince');
+                resetSignalState();
                 setRefreshSignals((prev) => !prev);
             } catch (error: any) {
                 console.error('Error claiming signal:', error);
                 alert(error.response?.data?.message || 'Failed to claim signal');
-                setSignalState('idle');
-                setSignalId(null);
-                setSignalData(null);
-                setReadySince(null);
-                setRequestTime(null);
-                localStorage.removeItem('signalState');
-                localStorage.removeItem('signalId');
-                localStorage.removeItem('signalData');
-                localStorage.removeItem('signalRequestTime');
-                localStorage.removeItem('readySince');
+                resetSignalState();
             }
         } else if (signalState === 'waiting') {
             alert('Signal request is already in progress. Please wait.');
@@ -274,6 +221,21 @@ const MiniApp: React.FC = () => {
             return;
         }
         setIsEnergyModalOpen(true);
+    };
+
+    const resetSignalState = () => {
+        setSignalState('idle');
+        setSignalId(null);
+        setSignalData(null);
+        setReadySince(null);
+        setRequestTime(null);
+        setConfirmTimeout(30000);
+        localStorage.removeItem('signalState');
+        localStorage.removeItem('signalId');
+        localStorage.removeItem('signalData');
+        localStorage.removeItem('signalRequestTime');
+        localStorage.removeItem('readySince');
+        localStorage.removeItem('confirmTimeout');
     };
 
     return (
@@ -297,7 +259,8 @@ const MiniApp: React.FC = () => {
                         state={signalState}
                         disabled={signalState === 'waiting'}
                         requestTime={requestTime}
-                        readySince={readySince}
+                        activatedAt={readySince}
+                        confirmTimeout={confirmTimeout}
                     />
                     <TopWinners />
                     {isEnergyModalOpen && <EnergyModal onClose={() => setIsEnergyModalOpen(false)} />}

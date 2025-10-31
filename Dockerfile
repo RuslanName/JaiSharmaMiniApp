@@ -1,21 +1,34 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-COPY server/package*.json ./
+COPY package*.json ./
 RUN npm ci
 
-COPY server/src ./src
-COPY server/tsconfig.json ./tsconfig.json
-
+COPY . .
 RUN npm run build
 
 FROM node:20-alpine
 WORKDIR /app
 
-COPY --from=builder /app/node_modules ./node_modules
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    freetype-dev \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    && rm -rf /var/cache/apk/*
+
+RUN which chromium-browser && echo "Chromium found" || echo "Chromium not found"
+
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 
-ENV NODE_ENV=production
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser \
+    NODE_ENV=production
+
 EXPOSE 5000
 CMD ["node", "dist/main.js"]

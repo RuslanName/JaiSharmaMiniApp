@@ -17,33 +17,45 @@ export class SignalExpirationService {
   @Cron(CronExpression.EVERY_10_SECONDS)
   async handleSignalExpiration() {
     try {
+      // ---------- ACTIVE ----------
       const signalConfirmTimeoutSetting = await this.settingService.findByKey(
         'signal_confirm_timeout',
       );
       const signalConfirmTimeout = signalConfirmTimeoutSetting
         ? parseInt(signalConfirmTimeoutSetting.value as string, 10)
-        : 30;
+        : 30; // seconds
 
       const now = new Date();
-      const expirationTime = new Date(
+      const activeExpiration = new Date(
         now.getTime() - signalConfirmTimeout * 1000,
       );
 
-      const signals = await this.signalRepository.find({
-        where: {
-          status: SignalStatus.ACTIVE,
-          activated_at: LessThanOrEqual(expirationTime),
-        },
+      await this.signalRepository.delete({
+        status: SignalStatus.ACTIVE,
+        activated_at: LessThanOrEqual(activeExpiration),
       });
 
-      for (const signal of signals) {
-        await this.signalRepository.delete(signal.id);
-      }
+      const pendingMaxAgeSetting = await this.settingService.findByKey(
+        'pending_signal_max_age',
+      );
+      const pendingMaxAgeSeconds = pendingMaxAgeSetting
+        ? parseInt(pendingMaxAgeSetting.value as string, 10)
+        : 600;
+
+      const pendingExpiration = new Date(
+        now.getTime() - pendingMaxAgeSeconds * 1000,
+      );
+
+      await this.signalRepository.delete({
+        status: SignalStatus.PENDING,
+        created_at: LessThanOrEqual(pendingExpiration),
+      });
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      console.log(`Error in signal expiration: ${errorMessage}`);
-      throw new Error(`Error in signal expiration: ${errorMessage}`);
+      console.log(
+        `Error in signal expiration: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
+      );
     }
   }
 }

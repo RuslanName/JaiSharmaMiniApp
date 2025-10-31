@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   db:
     image: postgres:16-alpine
@@ -32,14 +34,17 @@ services:
     env_file:
       - ./server/.env
     environment:
-      DB_URL: db
+      DB_HOST: db
       NODE_ENV: production
       PORT: 5000
+      PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
     depends_on:
       db:
         condition: service_healthy
       client-build:
         condition: service_completed_successfully
+    volumes:
+      - ./client/dist:/app/client-dist:ro
 
   nginx:
     image: nginx:alpine

@@ -5,10 +5,18 @@ interface GetSignalButtonProps {
     state: 'idle' | 'waiting' | 'ready';
     disabled?: boolean;
     requestTime?: number | null;
-    readySince?: number | null;
+    activatedAt?: number | null;
+    confirmTimeout?: number | null;
 }
 
-const SignalButton: React.FC<GetSignalButtonProps> = ({ onClick, state, disabled, requestTime, readySince }) => {
+const SignalButton: React.FC<GetSignalButtonProps> = ({
+                                                          onClick,
+                                                          state,
+                                                          disabled,
+                                                          requestTime,
+                                                          activatedAt,
+                                                          confirmTimeout = 30000,
+                                                      }) => {
     const buttonStyles = {
         idle: 'bg-gradient-to-r from-[#46AA6E] to-[#33E870]',
         waiting: 'bg-gradient-to-r from-[#FF9F0A] to-[#F5BD28]',
@@ -16,17 +24,20 @@ const SignalButton: React.FC<GetSignalButtonProps> = ({ onClick, state, disabled
     };
 
     const getButtonText = () => {
-        if (state === 'idle') {
-            return 'GET SIGNAL';
-        } else if (state === 'waiting' && requestTime) {
-            const elapsedSeconds = Math.floor((Date.now() - requestTime) / 1000);
-            return `WAIT FOR SIGNAL - ${elapsedSeconds}s`;
-        } else if (state === 'ready' && readySince) {
-            const maxReadyTime = 30000;
-            const remainingSeconds = Math.max(0, Math.floor((maxReadyTime - (Date.now() - readySince)) / 1000));
-            return `MAKE BET IN GAME - ${remainingSeconds}s`;
+        if (state === 'idle') return 'GET SIGNAL';
+
+        if (state === 'waiting' && requestTime) {
+            const elapsed = Math.floor((Date.now() - requestTime) / 1000);
+            return `WAIT FOR SIGNAL - ${elapsed}s`;
         }
-        return state === 'waiting' ? 'WAIT FOR SIGNAL' : 'MAKE BET IN GAME';
+
+        if (state === 'ready' && activatedAt && confirmTimeout) {
+            const elapsed = Date.now() - activatedAt;
+            const remaining = Math.max(0, Math.floor((confirmTimeout - elapsed) / 1000));
+            return `MAKE BET IN GAME - ${remaining}s`;
+        }
+
+        return 'MAKE BET IN GAME';
     };
 
     return (

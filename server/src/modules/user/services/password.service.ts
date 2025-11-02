@@ -1,12 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, FindOptionsWhere } from 'typeorm';
+import { FindOptionsWhere, Like, Repository } from 'typeorm';
 import { Password } from '../entities/password.entity';
 import { User } from '../entities/user.entity';
 import { CreatePasswordDto } from '../dtos/password/create-password.dto';
 import { UpdatePasswordDto } from '../dtos/password/update-password.dto';
 import { PaginationDto } from '../../../common/pagination.dto';
 import { PasswordFilterDto } from '../dtos/password/password-filter.dto';
+import { SettingService } from '../../setting/setting.service';
 
 @Injectable()
 export class PasswordService {
@@ -15,6 +20,7 @@ export class PasswordService {
     private passwordRepository: Repository<Password>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    private settingService: SettingService,
   ) {}
 
   async findAll(
@@ -60,14 +66,18 @@ export class PasswordService {
   }
 
   private async validateUser(
-    userId: number | null | undefined,
+    userId: number | null | undefined | string,
   ): Promise<User | null> {
-    if (userId === null || userId === undefined) {
+    if (userId === null || userId === undefined || userId === '') {
       return null;
     }
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+    const parsedId = typeof userId === 'string' ? parseInt(userId, 10) : userId;
+    if (isNaN(parsedId)) {
+      return null;
+    }
+    const user = await this.userRepository.findOne({ where: { id: parsedId } });
     if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
+      throw new NotFoundException(`User with ID ${parsedId} not found`);
     }
     return user;
   }
@@ -103,7 +113,11 @@ export class PasswordService {
     });
 
     if (updatePasswordDto.user_id !== undefined) {
-      password.user = await this.validateUser(updatePasswordDto.user_id);
+      if (updatePasswordDto.user_id === null) {
+        password.user = null;
+      } else {
+        password.user = await this.validateUser(updatePasswordDto.user_id);
+      }
     }
 
     return await this.passwordRepository.save(password);
@@ -114,5 +128,43 @@ export class PasswordService {
     if (result.affected === 0) {
       throw new NotFoundException(`Password with ID ${id} not found`);
     }
+  }
+
+  async verify(
+    userId: number,
+    password: string,
+  ): Promise<{ success: boolean }> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['password'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    const passwordRecord = await this.passwordRepository.findOne({
+      where: { password },
+    });
+
+    if (!passwordRecord) {
+      throw new UnauthorizedException('Invalid password');
+    }
+
+    if (user.password && user.password.id === passwordRecord.id) {
+      throw new UnauthorizedException('Password already used');
+    }
+
+    user.password = passwordRecord;
+    await this.userRepository.save(user);
+
+    const maxEnergySetting = await this.settingService.findByKey('max_energy');
+    user.energy = maxEnergySetting
+      ? parseInt(maxEnergySetting.value as string, 10)
+      : 100;
+
+    await this.userRepository.save(user);
+
+    return { success: true };
   }
 }

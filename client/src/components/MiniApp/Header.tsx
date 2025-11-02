@@ -1,10 +1,10 @@
 import React from 'react';
-import Logo from '../../assets/logo.svg';
+import Logo from '../../assets/jai-sharma-logo.svg';
 
 const Header: React.FC = () => {
     return (
-        <div className="mt-[16px]">
-            <div className="mx-auto flex justify-center items-center gap-[10px]">
+        <div className="mt-[16px] relative pb-[8px]">
+            <div className="mx-auto flex justify-center items-center gap-[10px] relative z-10">
                 <img src={Logo} alt="logo" className="w-[41px] aspect-square" />
                 <div className="flex flex-col">
                     <h1 className="text-[18px] font-semibold">Jai Sharma</h1>

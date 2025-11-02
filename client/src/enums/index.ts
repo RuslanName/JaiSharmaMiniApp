@@ -16,6 +16,10 @@ export const SettingKey = {
     analysis_rounds: 'Количество раундов для анализа',
     signal_receive_time: 'Время получения сигнала после успешного анализа (в сек)',
     signal_confirm_timeout: 'Время на подтверждение сигнала (в сек)',
+    pending_signal_max_age: 'Максимальное время ожидания сделки (в сек)',
+    signal_request_recovery_time: 'Период восстановления для выдачи нового запроса (в мин)',
+    max_users_get_signal_request: 'Максимальное количество пользователей для выдачи запросов',
+    signal_request_ranges: 'Диапазоны времени для выдачи запросов на сигнал'
 } as const;
 
 export type SettingKey = typeof SettingKey[keyof typeof SettingKey];

@@ -9,6 +9,8 @@ export interface User {
     level: string;
     energy: number;
     registered_at: string;
+    password?: Password | null;
+    password_id?: number | null;
 }
 
 export interface Password {
@@ -49,6 +51,7 @@ export interface MiniAppUser {
     energy: number;
     maxEnergy: number;
     level: string;
+    is_access_allowed: boolean;
     best_signal: MiniAppSignal;
 }
 

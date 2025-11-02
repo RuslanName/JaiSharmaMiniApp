@@ -20,6 +20,7 @@
     "date-fns-tz": "^3.2.0",
     "js-cookie": "^3.0.5",
     "jwt-decode": "^4.0.0",
+    "lucide-react": "^0.552.0",
     "react": "^19.2.0",
     "react-admin": "^5.12.1",
     "react-dom": "^19.2.0",

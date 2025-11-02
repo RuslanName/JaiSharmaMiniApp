@@ -8,6 +8,7 @@ import { Password } from '../user/entities/password.entity';
 import { SettingModule } from '../setting/setting.module';
 import { RoundModule } from '../round/round.module';
 import { SignalExpirationService } from './signal-expiration.service';
+import { SignalAutomaticService } from './signal-automatic.service';
 import { BotModule } from '../bot/bot.module';
 
 @Module({
@@ -18,6 +19,6 @@ import { BotModule } from '../bot/bot.module';
     BotModule,
   ],
   controllers: [SignalController],
-  providers: [SignalService, SignalExpirationService],
+  providers: [SignalService, SignalExpirationService, SignalAutomaticService],
 })
 export class SignalModule {}

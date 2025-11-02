@@ -46,6 +46,9 @@ export class User {
   @Column({ default: true })
   is_access_allowed: boolean;
 
+  @Column({ nullable: true })
+  last_signal_request_at: Date;
+
   @CreateDateColumn()
   registered_at: Date;
 }

@@ -1,6 +1,8 @@
 import React from 'react';
 import { useAuthStore } from '@/store/auth';
-import Energy from '../../assets/energy.svg';
+import Energy from '../../assets/energy-icon.svg';
+import AddButton from '../../assets/add-button-icon.svg';
+import ProfileIcon from '../../assets/profile-icon.svg';
 
 interface PlayerInfoProps {
     onAddEnergy: () => void;
@@ -15,7 +17,22 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({ onAddEnergy }) => {
     return (
         <div className="flex justify-between items-start">
             <div className="flex gap-[8px] items-center">
-                <div className="w-[36px] h-[36px] bg-[red] rounded-full" />
+                <div 
+                    className="w-[36px] h-[36px] rounded-full flex items-center justify-center p-[0.5px]"
+                    style={{
+                        background: 'linear-gradient(-43deg, rgba(255, 255, 255, 0.3) 15%, rgba(255, 255, 255, 0) 85%)',
+                    }}
+                >
+                    <div 
+                        className="w-full h-full rounded-full flex items-center justify-center"
+                        style={{
+                            background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, rgba(78, 73, 73, 1) 100%)',
+                            backdropFilter: 'blur(24px)',
+                        }}
+                    >
+                        <img src={ProfileIcon} alt="" className="w-6 h-6" />
+                    </div>
+                </div>
                 <div className="flex flex-col justify-between">
                     <span className="text-[#FFFFFF73] text-[13px] font-thin">Player nickname</span>
                     <span className="text-white font-semibold text-[14px]">{password}</span>
@@ -28,9 +45,9 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({ onAddEnergy }) => {
                 </div>
                 <button
                     onClick={onAddEnergy}
-                    className="w-[19px] h-[19px] flex items-center justify-center rounded-full bg-[#FFFFFF14] border-1 border-[#FFFFFF1F]"
+                    className="w-[19px] h-[19px] flex items-center justify-center"
                 >
-                    +
+                    <img src={AddButton} alt="Add" className="w-full h-full" />
                 </button>
             </div>
         </div>

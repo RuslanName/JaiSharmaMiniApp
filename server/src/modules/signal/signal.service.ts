@@ -1,13 +1,8 @@
-import {
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, Like, Not, Repository } from 'typeorm';
 import { Signal } from './signal.entity';
 import { User } from '../user/entities/user.entity';
-import { Password } from '../user/entities/password.entity';
 import { CreateSignalDto } from './dtos/create-signal.dto';
 import { UpdateSignalDto } from './dtos/update-signal.dto';
 import { PaginationDto } from '../../common/pagination.dto';
@@ -24,8 +19,6 @@ export class SignalService {
     private signalRepository: Repository<Signal>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    @InjectRepository(Password)
-    private passwordRepository: Repository<Password>,
     private roundService: RoundService,
     private settingService: SettingService,
     private botService: BotService,
@@ -97,34 +90,6 @@ export class SignalService {
     return await this.signalRepository.save(signal);
   }
 
-  async verifyPassword(
-    userId: number,
-    password: string,
-  ): Promise<{ success: boolean }> {
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-      relations: ['password'],
-    });
-    if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
-    }
-
-    const passwordRecord = await this.passwordRepository.findOne({
-      where: { password },
-    });
-    if (!passwordRecord) {
-      throw new UnauthorizedException('Invalid password');
-    }
-
-    if (user.password && user.password.id === passwordRecord.id) {
-      throw new UnauthorizedException('Password already used');
-    }
-
-    user.password = passwordRecord;
-    await this.userRepository.save(user);
-    return { success: true };
-  }
-
   async update(id: number, updateSignalDto: UpdateSignalDto): Promise<Signal> {
     const signal = await this.signalRepository.findOne({
       where: { id },
@@ -179,56 +144,11 @@ export class SignalService {
         round.multiplier <= maxAnalysisCoefficient,
     );
     const percentage = (lowMultiplierRounds.length / recentRounds.length) * 100;
+    console.log(percentage >= analysisPercentage);
     return percentage >= analysisPercentage;
   }
 
-  async requestSignal(userId: number): Promise<Signal> {
-    const user = await this.validateUser(userId);
-    if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
-    }
-
-    if (user.energy < 1) {
-      throw new Error(`Insufficient energy for user ${userId}`);
-    }
-
-    const existingPendingSignal = await this.signalRepository.findOne({
-      where: { user: { id: userId }, status: SignalStatus.PENDING },
-    });
-    if (existingPendingSignal) {
-      return existingPendingSignal;
-    }
-
-    const signal = this.signalRepository.create({
-      multiplier: 0,
-      amount: 0,
-      status: SignalStatus.PENDING,
-      user,
-    });
-    await this.signalRepository.save(signal);
-
-    if (user.chat_id) {
-      try {
-        await this.botService.sendMessage(
-          user.chat_id,
-          'The analysis system is working. Wait for a signal',
-        );
-      } catch (error: unknown) {
-        console.log(
-          `Failed to send analysis message to user ${userId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        );
-      }
-    }
-
-    await this.processSignal(signal.id, userId, user.chat_id);
-    return signal;
-  }
-
-  private async processSignal(
-    signalId: number,
-    userId: number,
-    chatId?: string,
-  ) {
+  async processSignal(signalId: number, userId: number, chatId?: string) {
     const signal = await this.signalRepository.findOne({
       where: { id: signalId },
     });
@@ -351,7 +271,9 @@ export class SignalService {
   }
 
   async getSignalRequestStatus(userId: number): Promise<{
-    isPending: boolean;
+    canRequest: boolean;
+    cooldownSeconds?: number;
+    isPending?: boolean;
     requestTime?: number;
     activatedAt?: number;
     confirmTimeout?: number;
@@ -361,11 +283,35 @@ export class SignalService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
+    const recoveryTimeSetting = await this.settingService.findByKey(
+      'signal_request_recovery_time',
+    );
+    const recoveryTimeMinutes = recoveryTimeSetting
+      ? parseInt(recoveryTimeSetting.value as string, 10)
+      : 1;
+
+    let cooldownSeconds: number | undefined;
+
+    if (user.last_signal_request_at) {
+      const now = new Date();
+      const diffMs = now.getTime() - user.last_signal_request_at.getTime();
+      const diffSeconds = diffMs / 1000;
+      const requiredSeconds = recoveryTimeMinutes * 60;
+
+      if (diffSeconds < requiredSeconds) {
+        cooldownSeconds = Math.ceil(requiredSeconds - diffSeconds);
+      }
+    }
+
+    const canRequest = !cooldownSeconds;
+
     const pendingSignal = await this.signalRepository.findOne({
       where: { user: { id: userId }, status: SignalStatus.PENDING },
     });
+
     if (pendingSignal) {
       return {
+        canRequest: false,
         isPending: true,
         requestTime: pendingSignal.created_at.getTime(),
       };
@@ -384,14 +330,16 @@ export class SignalService {
         : 30;
 
       return {
-        isPending: false,
-        requestTime: activeSignal.created_at.getTime(),
+        canRequest: false,
         activatedAt: activeSignal.activated_at.getTime(),
         confirmTimeout: confirmTimeout * 1000,
       };
     }
 
-    return { isPending: false };
+    return {
+      canRequest,
+      cooldownSeconds,
+    };
   }
 
   async clearRequest(userId: number): Promise<void> {

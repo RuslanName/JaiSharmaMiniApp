@@ -7,7 +7,7 @@ import {
     Edit,
     Create,
     SimpleForm,
-    DateInput,
+    DateTimeInput,
     type ListProps,
     type EditProps,
     type CreateProps,
@@ -15,6 +15,16 @@ import {
     TextInput,
 } from 'react-admin';
 import type {Raffle} from '@/interfaces';
+
+const parseMoscowDateTime = (value: string): string => {
+    if (!value) return value;
+
+    if (value.includes('T')) {
+        return value.replace(/Z|[+\-]\d{2}:\d{2}$/, '+03:00');
+    }
+    
+    return value;
+};
 
 export const RafflesList = (props: ListProps<Raffle>) => (
     <List {...props} title="Розыгрыши" pagination={<></>} perPage={25}>
@@ -50,7 +60,11 @@ export const RafflesEdit = (props: EditProps<Raffle>) => (
     <Edit {...props} title="Редактирование розыгрыша">
         <SimpleForm>
             <TextInput source="content" label="Контент" multiline />
-            <DateInput source="send_at" label="Дата отправки" />
+            <DateTimeInput 
+                source="send_at" 
+                label="Дата и время отправки" 
+                parse={parseMoscowDateTime}
+            />
         </SimpleForm>
     </Edit>
 );
@@ -59,7 +73,11 @@ export const RafflesCreate = (props: CreateProps<Raffle>) => (
     <Create {...props} title="Создание розыгрыша">
         <SimpleForm>
             <TextInput source="content" label="Контент" multiline />
-            <DateInput source="send_at" label="Дата отправки" />
+            <DateTimeInput 
+                source="send_at" 
+                label="Дата и время отправки" 
+                parse={parseMoscowDateTime}
+            />
         </SimpleForm>
     </Create>
 );

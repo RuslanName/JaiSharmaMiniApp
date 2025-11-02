@@ -38,7 +38,14 @@ const settingsProvider: Partial<DataProvider> = {
     },
     update: async (resource, params) => {
         const token = useAuthStore.getState().token;
-        const response = await api.patch(`/${resource}/${params.id}`, params.data, {
+        
+        // Преобразуем value в строку JSON, если это массив или объект (для signal_request_ranges и других JSON настроек)
+        const dataToSend = { ...params.data };
+        if (dataToSend.value && typeof dataToSend.value === 'object') {
+            dataToSend.value = JSON.stringify(dataToSend.value);
+        }
+        
+        const response = await api.patch(`/${resource}/${params.id}`, dataToSend, {
             headers: { Authorization: `Bearer ${token}` },
         });
         return {

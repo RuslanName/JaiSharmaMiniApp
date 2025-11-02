@@ -52,23 +52,9 @@ export class SignalController {
     return await this.signalService.create(createSignalDto);
   }
 
-  @Post('request')
-  @Header('Cache-Control', 'public, max-age=3')
-  async requestSignal(@Req() req: AuthenticatedRequest) {
-    return await this.signalService.requestSignal(req.user.id);
-  }
-
   @Post('claim/:id')
   async claimSignal(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return await this.signalService.claimSignal(req.user.id, +id);
-  }
-
-  @Post('verify-password')
-  async verifyPassword(
-    @Body() body: { password: string },
-    @Req() req: AuthenticatedRequest,
-  ) {
-    return await this.signalService.verifyPassword(req.user.id, body.password);
   }
 
   @Post('clear-request')

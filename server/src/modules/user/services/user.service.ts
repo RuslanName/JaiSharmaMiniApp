@@ -99,12 +99,16 @@ export class UserService {
       if (updateUserDto.password_id === null) {
         user.password = null;
       } else {
+        const passwordId = updateUserDto.password_id;
+        if (isNaN(passwordId)) {
+          throw new NotFoundException(`Invalid password_id format`);
+        }
         const password = await this.passwordRepository.findOne({
-          where: { id: updateUserDto.password_id },
+          where: { id: passwordId },
         });
         if (!password) {
           throw new NotFoundException(
-            `Password with ID ${updateUserDto.password_id} not found`,
+            `Password with ID ${passwordId} not found`,
           );
         }
         user.password = password;

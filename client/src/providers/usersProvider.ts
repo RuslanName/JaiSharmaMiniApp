@@ -53,6 +53,19 @@ const usersProvider: Partial<DataProvider> = {
             })),
         };
     },
+    getOne: async (resource, params) => {
+        const token = useAuthStore.getState().token;
+        const response = await api.get(`/${resource}/${params.id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        const user = response.data;
+        return {
+            data: {
+                ...user,
+                password_id: user.password?.id || '',
+            },
+        };
+    },
     toggleAccess: async (resource: any, params: { id: number; data: { is_access_allowed: boolean } }) => {
         const token = useAuthStore.getState().token;
         const response = await api.patch(

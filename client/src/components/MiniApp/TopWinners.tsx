@@ -3,6 +3,7 @@ import api from '../../api/axios';
 import { useAuthStore } from '@/store/auth';
 import type {MiniAppUser} from '@/interfaces';
 import WinnerCard from './WinnerCard';
+import CrownIcon from '../../assets/crown-icon.svg';
 
 const TopWinners: React.FC = () => {
     const { token } = useAuthStore();
@@ -29,14 +30,17 @@ const TopWinners: React.FC = () => {
     }, [token]);
 
     return (
-        <div className="mt-[20px]">
-            <div className="flex items-center gap-[16px]">
-                <h2 className="text-[24px] font-semibold">Top winners</h2>
+        <div className="my-[4px]">
+            <div className="flex items-center gap-[16px] mb-[16px]">
+                <div className="flex items-center pt-[2px]">
+                    <img src={CrownIcon} alt="" className="w-5 h-5" />
+                </div>
+                <h2 className="text-[24px] font-semibold text-white">Top winners</h2>
             </div>
             {loading ? (
-                <div>Loading...</div>
+                <div className="text-white">Loading...</div>
             ) : (
-                <div className="overflow-y-scroll hide-scrollbar max-h-[400px] space-y-[12px] mt-[16px]">
+                <div className="overflow-y-scroll hide-scrollbar max-h-[400px] space-y-[12px]">
                     {winners.map((winner) => (
                         <WinnerCard key={winner.id} winner={winner} />
                     ))}

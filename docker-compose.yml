@@ -36,6 +36,8 @@ services:
       NODE_ENV: production
       PORT: 5000
       PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium
+      DISPLAY: :99
+      PUPPETEER_HEADLESS: "false"
     depends_on:
       db:
         condition: service_healthy
@@ -46,9 +48,10 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1G
+          memory: 2G
         reservations:
-          memory: 512M
+          memory: 1G
+    shm_size: '2gb'
 
   nginx:
     image: nginx:alpine

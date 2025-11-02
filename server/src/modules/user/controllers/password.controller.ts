@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { PasswordService } from '../services/password.service';
@@ -17,6 +18,7 @@ import { PasswordFilterDto } from '../dtos/password/password-filter.dto';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { RolesGuard } from '../../auth/roles.guard';
 import { Roles } from '../../auth/roles.decorator';
+import { AuthenticatedRequest } from '../../../types/express';
 
 @Controller('passwords')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -57,5 +59,14 @@ export class PasswordController {
   @Roles('admin')
   async delete(@Param('id') id: string) {
     return await this.passwordService.delete(+id);
+  }
+
+  @Post('verify')
+  @Roles('user', 'admin')
+  async verify(
+    @Body() body: { password: string },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return await this.passwordService.verify(req.user.id, body.password);
   }
 }

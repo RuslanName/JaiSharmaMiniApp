@@ -12,6 +12,7 @@ WORKDIR /app
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
+      bash \
       chromium \
       chromium-sandbox \
       fonts-liberation \

@@ -1,7 +1,6 @@
 import {
     List,
     Datagrid,
-    TextField,
     EditButton,
     Edit,
     SimpleForm,
@@ -33,9 +32,7 @@ const formatValue = (record: Setting): string => {
             if (Array.isArray(parsed)) {
                 return parsed.map((r: {start: string; end: string}) => `${r.start}-${r.end}`).join(', ') || 'Нет диапазонов';
             }
-        } catch (e) {
-            // Ignore parse errors
-        }
+        } catch (e) {}
     }
     return String(record.value || '');
 };

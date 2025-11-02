@@ -22,11 +22,7 @@ const isDev = config.MODE === 'dev';
       database: config.DB_DATABASE,
       entities: [__dirname + '/**/*.{entity,entities}{.ts,.js}'],
       synchronize: isDev,
-      ssl: isDev
-        ? false
-        : {
-            rejectUnauthorized: false,
-          },
+      ssl: false,
     }),
     AuthModule,
     BotModule,

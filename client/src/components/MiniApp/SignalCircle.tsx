@@ -70,7 +70,7 @@ const SignalCircle: React.FC<SignalCircleProps> = ({
                 <span className="text-[24px] text-white">No Signal</span>
                 <div className="flex flex-col gap-[2px] text-[13px] text-center">
                     <span className="font-light">Ai Protocol:</span>
-                    <span className="font-semibold text-white">Idle</span>
+                    <span className="font-semibold text-white">IDLE</span>
                 </div>
             </>
         );

@@ -5,7 +5,7 @@ import { UserService } from '../user/services/user.service';
 import { CreateUserDto } from '../user/dtos/user/create-user.dto';
 import { User } from '../user/entities/user.entity';
 import { config } from '../../config/constants';
-import { TelegramUserData } from '../interfaces/telegram-user-data.interface';
+import { TelegramUserData } from '../../interfaces/telegram-user-data.interface';
 
 @Injectable()
 export class AuthService {

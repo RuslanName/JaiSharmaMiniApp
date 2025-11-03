@@ -154,10 +154,16 @@ export class SignalService {
     if (!signal) return;
 
     let analysisMet = await this.checkAnalysisCondition();
-    const maxWaitTime = 300000;
+
+    const pendingSignalMaxAge =
+      parseFloat(
+        (await this.settingService.findByKey('pending_signal_max_age'))
+          .value as string,
+      ) || 1.5;
+
     const startTime = Date.now();
 
-    while (!analysisMet && Date.now() - startTime < maxWaitTime) {
+    while (!analysisMet && Date.now() - startTime < pendingSignalMaxAge) {
       await new Promise((resolve) => setTimeout(resolve, 5000));
       analysisMet = await this.checkAnalysisCondition();
     }

@@ -7,7 +7,7 @@ import { UpdateUserDto } from '../dtos/user/update-user.dto';
 import { CreateUserDto } from '../dtos/user/create-user.dto';
 import { PaginationDto } from '../../../common/pagination.dto';
 import { UserFilterDto } from '../dtos/user/user-filter.dto';
-import { UserWithMaxEnergy } from '../../interfaces/user-with-max-energy.interface';
+import { UserWithMaxEnergy } from '../../../interfaces/user-with-max-energy.interface';
 import { SettingService } from '../../setting/setting.service';
 import { SignalStatus } from '../../../enums/signal-status.enum';
 

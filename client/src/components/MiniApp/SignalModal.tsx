@@ -62,17 +62,25 @@ const SignalModal: React.FC<SignalModalProps> = ({ onClose }) => {
         <div 
             className="fixed inset-0 z-10 flex items-center justify-center px-[35px]"
             style={{
-                background: 'rgba(15, 15, 15, 0.3)',
+                background: 'rgba(15, 15, 15, 0.5)',
+                WebkitBackdropFilter: 'blur(15px)',
                 backdropFilter: 'blur(15px)',
+                transform: 'translateZ(0)',
+                WebkitTransform: 'translateZ(0)',
             }}
         >
             <div 
                 className={`w-[360px] rounded-[22px] border-[2px] py-[16px] px-[20px] ${
                     isError 
-                        ? 'bg-[rgba(89,26,26,0.15)] border-[rgba(255,69,69,0.1)]' 
-                        : 'bg-[rgba(45,45,45,0.15)] border-[rgba(255,255,255,0.1)]'
+                        ? 'bg-[rgba(89,26,26,0.4)] border-[rgba(255,69,69,0.1)]' 
+                        : 'bg-[rgba(45,45,45,0.4)] border-[rgba(255,255,255,0.1)]'
                 }`}
-                style={{ backdropFilter: 'blur(70px)' }}
+                style={{
+                    WebkitBackdropFilter: 'blur(70px)',
+                    backdropFilter: 'blur(70px)',
+                    transform: 'translateZ(0)',
+                    WebkitTransform: 'translateZ(0)',
+                }}
             >
                 <div className="flex flex-col gap-[32px]">
                     <div className="flex flex-col gap-[24px]">

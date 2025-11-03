@@ -33,13 +33,21 @@ const EnergyModal: React.FC<EnergyModalProps> = ({ onClose }) => {
         <div
             className="fixed inset-0 z-50 flex items-center justify-center px-[35px]"
             style={{
-                background: 'rgba(15, 15, 15, 0.3)',
+                background: 'rgba(15, 15, 15, 0.5)',
+                WebkitBackdropFilter: 'blur(15px)',
                 backdropFilter: 'blur(15px)',
+                transform: 'translateZ(0)',
+                WebkitTransform: 'translateZ(0)',
             }}
         >
             <div
-                className="w-[360px] rounded-[22px] bg-[rgba(45,45,45,0.15)] border-[2px] border-[rgba(255,255,255,0.1)] py-[16px] px-[20px]"
-                style={{ backdropFilter: 'blur(70px)' }}
+                className="w-[360px] rounded-[22px] bg-[rgba(45,45,45,0.4)] border-[2px] border-[rgba(255,255,255,0.1)] py-[16px] px-[20px]"
+                style={{
+                    WebkitBackdropFilter: 'blur(70px)',
+                    backdropFilter: 'blur(70px)',
+                    transform: 'translateZ(0)',
+                    WebkitTransform: 'translateZ(0)',
+                }}
             >
                 <div className="flex flex-col gap-[26px]">
                     <div className="flex flex-col gap-[24px]">

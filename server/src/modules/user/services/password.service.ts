@@ -11,6 +11,7 @@ import { CreatePasswordDto } from '../dtos/password/create-password.dto';
 import { UpdatePasswordDto } from '../dtos/password/update-password.dto';
 import { PaginationDto } from '../../../common/pagination.dto';
 import { PasswordFilterDto } from '../dtos/password/password-filter.dto';
+import { GeneratePasswordsDto } from '../dtos/password/generate-passwords.dto';
 import { SettingService } from '../../setting/setting.service';
 
 @Injectable()
@@ -166,5 +167,51 @@ export class PasswordService {
     await this.userRepository.save(user);
 
     return { success: true };
+  }
+
+  private generatePassword(): string {
+    const uppercaseLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const digits = '0123456789';
+    const chars = uppercaseLetters + digits;
+    let password = '';
+    for (let i = 0; i < 8; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  }
+
+  async generateMany(
+    generatePasswordsDto: GeneratePasswordsDto,
+  ): Promise<{ data: Password[]; count: number }> {
+    const { count } = generatePasswordsDto;
+    const passwords: Password[] = [];
+
+    for (let i = 0; i < count; i++) {
+      let password = this.generatePassword();
+      let attempts = 0;
+      const maxAttempts = 100;
+
+      // Проверяем уникальность пароля
+      while (attempts < maxAttempts) {
+        const existing = await this.passwordRepository.findOne({
+          where: { password },
+        });
+        if (!existing) {
+          break;
+        }
+        password = this.generatePassword();
+        attempts++;
+      }
+
+      const passwordEntity = this.passwordRepository.create({
+        password,
+        website_url: '',
+        user: null,
+      });
+      passwords.push(passwordEntity);
+    }
+
+    const savedPasswords = await this.passwordRepository.save(passwords);
+    return { data: savedPasswords, count: savedPasswords.length };
   }
 }

@@ -15,6 +15,7 @@ import { CreatePasswordDto } from '../dtos/password/create-password.dto';
 import { UpdatePasswordDto } from '../dtos/password/update-password.dto';
 import { PaginationDto } from '../../../common/pagination.dto';
 import { PasswordFilterDto } from '../dtos/password/password-filter.dto';
+import { GeneratePasswordsDto } from '../dtos/password/generate-passwords.dto';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { RolesGuard } from '../../auth/roles.guard';
 import { Roles } from '../../auth/roles.decorator';
@@ -68,5 +69,11 @@ export class PasswordController {
     @Req() req: AuthenticatedRequest,
   ) {
     return await this.passwordService.verify(req.user.id, body.password);
+  }
+
+  @Post('generate')
+  @Roles('admin')
+  async generate(@Body() generatePasswordsDto: GeneratePasswordsDto) {
+    return await this.passwordService.generateMany(generatePasswordsDto);
   }
 }

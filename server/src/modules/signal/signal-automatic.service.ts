@@ -1,6 +1,6 @@
 import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { Cron } from '@nestjs/schedule';
 import { Signal } from './signal.entity';
 import { User } from '../user/entities/user.entity';
@@ -8,11 +8,12 @@ import { SettingService } from '../setting/setting.service';
 import { BotService } from '../bot/bot.service';
 import { SignalService } from './signal.service';
 import { SignalStatus } from '../../enums/signal-status.enum';
-import { TimeRange } from '../interfaces/time-range.interface';
+import { TimeRange } from '../../interfaces/time-range.interface';
 
 @Injectable()
 export class SignalAutomaticService {
   private isRunning = false;
+  private readonly lockKey = 'signal_distribution_lock';
 
   constructor(
     @InjectRepository(Signal)
@@ -23,21 +24,31 @@ export class SignalAutomaticService {
     private botService: BotService,
     @Inject(forwardRef(() => SignalService))
     private signalService: SignalService,
+    private dataSource: DataSource,
   ) {}
 
-  @Cron('*/15 * * * *')
+  @Cron('*/1 * * * *')
   async distributeSignalRequests() {
     if (this.isRunning) {
       return;
     }
 
+    const isInRange = await this.isTimeInAllowedRanges();
+    if (!isInRange) {
+      return;
+    }
+
+    const lockResult = await this.dataSource.query(
+      `SELECT pg_try_advisory_lock(hashtext($1)) as acquired`,
+      [this.lockKey],
+    );
+
+    if (!lockResult?.[0]?.acquired) {
+      return;
+    }
+
     this.isRunning = true;
     try {
-      const isInRange = await this.isTimeInAllowedRanges();
-      if (!isInRange) {
-        return;
-      }
-
       const recoveryTimeSetting = await this.settingService.findByKey(
         'signal_request_recovery_time',
       );
@@ -69,6 +80,9 @@ export class SignalAutomaticService {
         }`,
       );
     } finally {
+      await this.dataSource
+        .query(`SELECT pg_advisory_unlock(hashtext($1))`, [this.lockKey])
+        .catch(() => {});
       this.isRunning = false;
     }
   }
@@ -187,53 +201,98 @@ export class SignalAutomaticService {
 
   private async createRequestSignal(user: User): Promise<void> {
     try {
-      const existingActiveSignal = await this.signalRepository.findOne({
-        where: {
-          user: { id: user.id },
-          status: SignalStatus.ACTIVE,
-        },
-      });
+      const savedSignal = await this.dataSource.transaction(
+        'SERIALIZABLE',
+        async (manager) => {
+          const userEntity = await manager
+            .createQueryBuilder(User, 'user')
+            .where('user.id = :userId', { userId: user.id })
+            .setLock('pessimistic_write')
+            .getOne();
 
-      const existingPendingSignal = await this.signalRepository.findOne({
-        where: {
-          user: { id: user.id },
-          status: SignalStatus.PENDING,
-        },
-      });
+          if (!userEntity) {
+            return null;
+          }
 
-      if (existingActiveSignal || existingPendingSignal) {
+          const existingSignal = await manager
+            .createQueryBuilder(Signal, 'signal')
+            .innerJoin('signal.user', 'user')
+            .where('user.id = :userId', { userId: user.id })
+            .andWhere('signal.status IN (:...statuses)', {
+              statuses: [SignalStatus.ACTIVE, SignalStatus.PENDING],
+            })
+            .setLock('pessimistic_write')
+            .getOne();
+
+          if (existingSignal) {
+            return null;
+          }
+
+          await manager.update(
+            User,
+            { id: user.id },
+            {
+              last_signal_request_at: new Date(),
+            },
+          );
+
+          const signal = manager.create(Signal, {
+            multiplier: 0,
+            amount: 0,
+            status: SignalStatus.PENDING,
+            user: { id: user.id },
+          });
+
+          return await manager.save(Signal, signal);
+        },
+      );
+
+      if (!savedSignal) {
         return;
       }
 
-      user.last_signal_request_at = new Date();
-      await this.userRepository.save(user);
+      try {
+        const updatedUser = await this.userRepository.findOne({
+          where: { id: user.id },
+        });
 
-      const signal = this.signalRepository.create({
-        multiplier: 0,
-        amount: 0,
-        status: SignalStatus.PENDING,
-        user,
-      });
-
-      await this.signalRepository.save(signal);
-
-      if (user.chat_id) {
-        try {
-          await this.botService.sendMessage(
-            user.chat_id,
-            'The analysis system is working. Wait for a signal',
-          );
-        } catch (error: unknown) {
-          console.log(
-            `Failed to send message to user ${user.id}: ${
-              error instanceof Error ? error.message : 'Unknown error'
-            }`,
-          );
+        if (updatedUser?.chat_id) {
+          try {
+            await this.botService.sendMessage(
+              updatedUser.chat_id,
+              'The analysis system is working. Wait for a signal',
+            );
+          } catch (error: unknown) {
+            console.log(
+              `Failed to send message to user ${user.id}: ${
+                error instanceof Error ? error.message : 'Unknown error'
+              }`,
+            );
+          }
         }
+
+        await this.signalService.processSignal(
+          savedSignal.id,
+          user.id,
+          updatedUser?.chat_id,
+        );
+      } catch (error: unknown) {
+        console.log(
+          `Error processing signal for user ${user.id}: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`,
+        );
+      }
+    } catch (error: unknown) {
+      if (
+        error instanceof Error &&
+        (error.message.includes('duplicate') ||
+          error.message.includes('unique') ||
+          error.message.includes('violates unique constraint'))
+      ) {
+        return;
       }
 
-      await this.signalService.processSignal(signal.id, user.id, user.chat_id);
-    } catch (error: unknown) {
       console.log(
         `Error creating signal request for user ${user.id}: ${
           error instanceof Error ? error.message : 'Unknown error'

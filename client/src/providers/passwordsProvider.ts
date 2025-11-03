@@ -19,6 +19,15 @@ const passwordsProvider = {
             },
         };
     },
+    generateMany: async (resource: any, params: { data: { count: number } }) => {
+        const token = useAuthStore.getState().token;
+        const response = await api.post(`/${resource}/generate`, params.data, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        return {
+            data: response.data.data,
+        };
+    },
 };
 
 export default passwordsProvider;

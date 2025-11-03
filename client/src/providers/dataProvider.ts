@@ -75,6 +75,10 @@ const dataProvider: DataProvider = {
         if (!providers[resource]?.toggleAccess) throw new Error(`Method toggleAccess is not supported for resource ${resource}`);
         return providers[resource].toggleAccess!(resource, params);
     },
+    generateMany: async (resource: any, params: any) => {
+        if (!providers[resource]?.generateMany) throw new Error(`Method generateMany is not supported for resource ${resource}`);
+        return await providers[resource].generateMany!(resource, params);
+    },
 };
 
 export default dataProvider;

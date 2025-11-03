@@ -12,6 +12,8 @@ import { TimeRange } from '../interfaces/time-range.interface';
 
 @Injectable()
 export class SignalAutomaticService {
+  private isRunning = false;
+
   constructor(
     @InjectRepository(Signal)
     private signalRepository: Repository<Signal>,
@@ -25,12 +27,14 @@ export class SignalAutomaticService {
 
   @Cron('*/15 * * * *')
   async distributeSignalRequests() {
-    try {
-      console.log('Starting automatic signal request distribution');
+    if (this.isRunning) {
+      return;
+    }
 
+    this.isRunning = true;
+    try {
       const isInRange = await this.isTimeInAllowedRanges();
       if (!isInRange) {
-        console.log('Current time is not in allowed signal request ranges');
         return;
       }
 
@@ -55,21 +59,17 @@ export class SignalAutomaticService {
         maxUsers,
       );
 
-      console.log(
-        `Found ${eligibleUsers.length} eligible users, distributing to ${usersToReceiveRequest.length} users`,
-      );
-
       for (const user of usersToReceiveRequest) {
         await this.createRequestSignal(user);
       }
-
-      console.log('Automatic signal request distribution completed');
     } catch (error: unknown) {
       console.log(
         `Error in automatic signal request distribution: ${
           error instanceof Error ? error.message : 'Unknown error'
         }`,
       );
+    } finally {
+      this.isRunning = false;
     }
   }
 
@@ -80,9 +80,6 @@ export class SignalAutomaticService {
       );
 
       if (!rangesSetting || !rangesSetting.value) {
-        console.log(
-          'No signal_request_ranges setting found, allowing all times',
-        );
         return true;
       }
 
@@ -91,7 +88,6 @@ export class SignalAutomaticService {
         : (JSON.parse(rangesSetting.value as string) as TimeRange[]);
 
       if (!Array.isArray(ranges) || ranges.length === 0) {
-        console.log('Empty signal_request_ranges, allowing all times');
         return true;
       }
 
@@ -101,18 +97,12 @@ export class SignalAutomaticService {
       );
       const currentTime = `${String(mskTime.getHours()).padStart(2, '0')}:${String(mskTime.getMinutes()).padStart(2, '0')}`;
 
-      console.log(`Checking current time ${currentTime} against ranges`);
-
       for (const range of ranges) {
         if (this.isTimeInRange(currentTime, range.start, range.end)) {
-          console.log(
-            `Current time ${currentTime} is in range ${range.start} - ${range.end}`,
-          );
           return true;
         }
       }
 
-      console.log(`Current time ${currentTime} is not in any allowed range`);
       return false;
     } catch (error: unknown) {
       console.log(
@@ -197,6 +187,24 @@ export class SignalAutomaticService {
 
   private async createRequestSignal(user: User): Promise<void> {
     try {
+      const existingActiveSignal = await this.signalRepository.findOne({
+        where: {
+          user: { id: user.id },
+          status: SignalStatus.ACTIVE,
+        },
+      });
+
+      const existingPendingSignal = await this.signalRepository.findOne({
+        where: {
+          user: { id: user.id },
+          status: SignalStatus.PENDING,
+        },
+      });
+
+      if (existingActiveSignal || existingPendingSignal) {
+        return;
+      }
+
       user.last_signal_request_at = new Date();
       await this.userRepository.save(user);
 
@@ -208,8 +216,6 @@ export class SignalAutomaticService {
       });
 
       await this.signalRepository.save(signal);
-
-      console.log(`Created signal request for user ${user.id}`);
 
       if (user.chat_id) {
         try {

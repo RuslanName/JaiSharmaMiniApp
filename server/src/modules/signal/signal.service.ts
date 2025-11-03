@@ -144,7 +144,6 @@ export class SignalService {
         round.multiplier <= maxAnalysisCoefficient,
     );
     const percentage = (lowMultiplierRounds.length / recentRounds.length) * 100;
-    console.log(percentage >= analysisPercentage);
     return percentage >= analysisPercentage;
   }
 

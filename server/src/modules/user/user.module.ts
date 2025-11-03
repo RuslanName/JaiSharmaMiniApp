@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { User } from './entities/user.entity';
 import { Password } from './entities/password.entity';
 import { UserController } from './controllers/user.controller';
@@ -11,7 +12,11 @@ import { EnergyService } from './services/energy.service';
 import { SettingModule } from '../setting/setting.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Password, Setting]), SettingModule],
+  imports: [
+    TypeOrmModule.forFeature([User, Password, Setting]),
+    SettingModule,
+    ScheduleModule.forRoot(),
+  ],
   controllers: [UserController, PasswordController],
   providers: [UserService, PasswordService, EnergyService],
   exports: [UserService, TypeOrmModule],

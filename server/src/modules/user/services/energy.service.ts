@@ -7,6 +7,8 @@ import { SettingService } from '../../setting/setting.service';
 
 @Injectable()
 export class EnergyService {
+  private isRunning = false;
+
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
@@ -15,8 +17,11 @@ export class EnergyService {
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT, { timeZone: 'UTC' })
   async distributeDailyEnergy() {
-    console.log('Starting daily energy distribution');
+    if (this.isRunning) {
+      return;
+    }
 
+    this.isRunning = true;
     try {
       const maxEnergySetting =
         await this.settingService.findByKey('max_energy');
@@ -24,20 +29,19 @@ export class EnergyService {
         ? parseInt(maxEnergySetting.value as string, 10)
         : 100;
 
-      const users = await this.userRepository.find();
-      for (const user of users) {
-        user.energy = maxEnergy;
-        await this.userRepository.save(user);
-      }
-
-      console.log(
-        `Successfully distributed ${maxEnergy} energy to ${users.length} users`,
-      );
+      await this.userRepository
+        .createQueryBuilder()
+        .update(User)
+        .set({ energy: maxEnergy })
+        .execute();
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      console.log(`Failed to distribute daily energy: ${errorMessage}`);
-      throw new Error(`Failed to distribute daily energy: ${errorMessage}`);
+      console.log(
+        `Error in daily energy distribution: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
+      );
+    } finally {
+      this.isRunning = false;
     }
   }
 }

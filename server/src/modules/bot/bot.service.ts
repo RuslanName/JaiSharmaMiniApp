@@ -52,8 +52,14 @@ export class BotService implements OnModuleInit {
     await this.bot.handleUpdate(update);
   }
 
-  async sendMessage(chatId: string, message: string): Promise<void> {
-    await this.bot.telegram.sendMessage(chatId, message);
+  async sendMessage(
+    chatId: string,
+    message: string,
+    replyMarkup?: any,
+  ): Promise<void> {
+    await this.bot.telegram.sendMessage(chatId, message, {
+      reply_markup: replyMarkup,
+    });
   }
 
   private async findOrCreateUser(

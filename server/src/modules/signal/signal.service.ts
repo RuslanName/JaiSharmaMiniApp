@@ -11,6 +11,7 @@ import { RoundService } from '../round/round.service';
 import { SettingService } from '../setting/setting.service';
 import { BotService } from '../bot/bot.service';
 import { SignalStatus } from '../../enums/signal-status.enum';
+import { config } from '../../config/constants';
 
 @Injectable()
 export class SignalService {
@@ -229,9 +230,19 @@ export class SignalService {
 
     if (chatId) {
       try {
+        const miniAppUrl = config.WEB_APP_URL;
+        if (!miniAppUrl) throw new Error('Web app URL is not defined');
+
+        const replyMarkup = {
+          inline_keyboard: [
+            [{ text: 'Go to the app', web_app: { url: miniAppUrl } }],
+          ],
+        };
+
         await this.botService.sendMessage(
           chatId,
           'Signal received. Open the Mini App',
+          replyMarkup,
         );
       } catch (error: unknown) {
         console.log(

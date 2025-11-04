@@ -1,10 +1,4 @@
-import {
-  IsInt,
-  IsOptional,
-  IsString,
-  IsBoolean,
-  IsNumber,
-} from 'class-validator';
+import { IsInt, IsOptional, IsString, IsBoolean } from 'class-validator';
 
 export class UserFilterDto {
   @IsOptional()

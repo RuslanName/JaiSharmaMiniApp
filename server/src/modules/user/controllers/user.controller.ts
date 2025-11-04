@@ -43,7 +43,7 @@ export class UserController {
   }
 
   @Get('leaderboard')
-  @Header('Cache-Control', 'public, max-age=3')
+  @Header('Cache-Control', 'public, max-age=180')
   async getLeaderboard(@Query() paginationDto: PaginationDto) {
     return await this.userService.getLeaderboard(paginationDto);
   }

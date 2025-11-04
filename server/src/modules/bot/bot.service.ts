@@ -46,6 +46,13 @@ export class BotService implements OnModuleInit {
     });
 
     await this.bot.telegram.setWebhook(webhookUrl + '/api/bot/webhook');
+
+    await this.bot.telegram.setMyCommands([
+      {
+        command: 'start',
+        description: 'Start the bot',
+      },
+    ]);
   }
 
   async handleUpdate(update: any) {

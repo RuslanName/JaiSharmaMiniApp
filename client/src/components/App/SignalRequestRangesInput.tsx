@@ -42,7 +42,6 @@ export const SignalRequestRangesInput = ({ source, label }: SignalRequestRangesI
 
     const updateRanges = (newRanges: TimeRange[]) => {
         setRanges(newRanges);
-        // Сохраняем как массив объектов, react-admin автоматически сериализует при отправке
         field.onChange(newRanges);
     };
 

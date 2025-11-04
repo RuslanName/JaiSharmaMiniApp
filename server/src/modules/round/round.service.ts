@@ -112,122 +112,6 @@ export class RoundService {
     }
     return 'UNKNOWN_ERROR';
   }
-
-  private async waitForFrameToLoad(
-    frame: puppeteer.Frame,
-    maxWaitTime: number = 60000,
-  ): Promise<void> {
-    const startTime = Date.now();
-
-    while (Date.now() - startTime < maxWaitTime) {
-      const status = await frame.evaluate(() => {
-        const body = document.body;
-        if (!body) return 'no-body';
-
-        const hasLoading =
-          body.classList.contains('main-loading') ||
-          body.querySelector('.main-loading') !== null ||
-          body.querySelector('.spinner') !== null ||
-          body.innerText?.includes('Loading') ||
-          body.innerText?.includes('loading');
-
-        const errorText = body.innerText || '';
-        const hasError =
-          body.classList.contains('main-error-message') ||
-          body.querySelector('.main-error-message') !== null ||
-          body.querySelector('[class*="error"]') !== null ||
-          (errorText.includes('error') &&
-            !errorText.toLowerCase().includes('loading')) ||
-          errorText.includes('Error') ||
-          errorText.includes('Cannot read properties') ||
-          errorText.includes('undefined');
-
-        const hasPayouts =
-          body.querySelector('.payouts-block') !== null ||
-          body.querySelector('div.payouts-block') !== null ||
-          body.querySelector('.payouts-wrapper') !== null ||
-          body.querySelector('div.payouts-wrapper') !== null ||
-          body.querySelector('.payout') !== null ||
-          body.querySelector('[class*="payout"]') !== null;
-
-        if (hasError && !hasLoading) return 'error';
-        if (hasPayouts && !hasLoading) return 'loaded';
-        if (!hasLoading && !hasError) return 'ready';
-        return 'loading';
-      });
-
-      if (status === 'error') {
-        this.logger.error('Frame has error state detected!');
-
-        const errorDetails = await frame.evaluate(() => {
-          const errorElements = document.querySelectorAll(
-            '.main-error-message, [class*="error"], [class*="Error"]',
-          );
-          const errors: string[] = [];
-          errorElements.forEach((el) => {
-            const text = el.textContent?.trim();
-            if (text) errors.push(text);
-          });
-
-          const bodyText = document.body?.innerText || '';
-          const jsErrors = bodyText.match(/error|Error|Cannot read|undefined/i);
-
-          return {
-            errorElementsCount: errorElements.length,
-            errorTexts: errors.slice(0, 5),
-            hasJsError: !!jsErrors,
-            bodyPreview: bodyText.substring(0, 300),
-          };
-        });
-
-        this.logger.error(
-          `Error details: ${JSON.stringify(errorDetails, null, 2)}`,
-        );
-
-        throw new Error(
-          `Frame has error state: ${errorDetails.errorTexts.join('; ') || 'Unknown error'}. Check diagnostics.`,
-        );
-      }
-
-      if (status === 'loaded') {
-        this.logger.debug('Frame fully loaded with payouts content');
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        return;
-      }
-
-      if (status === 'ready') {
-        this.logger.debug(
-          'Frame ready (loading finished), waiting for content...',
-        );
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-
-        const hasContent = await frame.evaluate(() => {
-          return (
-            document.querySelector('div.payouts-wrapper') !== null ||
-            document.querySelector('.payouts-wrapper') !== null ||
-            document.querySelector('.payout') !== null
-          );
-        });
-
-        if (hasContent) {
-          this.logger.debug('Content appeared after ready state');
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-          return;
-        }
-
-        this.logger.debug('Content not yet available, continuing to wait...');
-      }
-
-      if (status === 'loading') {
-        this.logger.debug('Frame still loading...');
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-    }
-
-    throw new Error(`Frame did not load within ${maxWaitTime}ms`);
-  }
-
   private async diagnoseFrameContent(
     frame: puppeteer.Frame | null,
     page: puppeteer.Page | null,
@@ -284,9 +168,7 @@ export class RoundService {
                 count: elements.length,
               });
             }
-          } catch (e) {
-            // Invalid selector, skip
-          }
+          } catch (e) {}
         }
 
         const allDivs = document.querySelectorAll('div');
@@ -321,7 +203,7 @@ export class RoundService {
 
       if (page) {
         try {
-          const screenshot = await page.screenshot({
+          await page.screenshot({
             encoding: 'base64',
             fullPage: false,
           });
@@ -873,9 +755,7 @@ export class RoundService {
             await frame.addScriptTag({
               content: chromeMockScript,
             });
-          } catch (scriptTagError) {
-            // Ignore
-          }
+          } catch (scriptTagError) {}
 
           try {
             await frame.evaluate(() => {
@@ -936,9 +816,7 @@ export class RoundService {
                 };
               }
             });
-          } catch (evaluateError) {
-            // Ignore
-          }
+          } catch (evaluateError) {}
 
           await frame.evaluate(() => {
             const originalError = window.onerror;
@@ -1297,9 +1175,7 @@ export class RoundService {
                 payoutsSelector = altSelector;
                 alternativeFound = true;
                 break;
-              } catch (e) {
-                // Try next alternative
-              }
+              } catch (e) {}
             }
 
             if (!alternativeFound) {
@@ -1625,10 +1501,6 @@ export class RoundService {
       await this.safeCloseBrowser(browser);
 
       const taskEndTime = Date.now();
-      const totalDuration = this.taskStartTime
-        ? taskEndTime - this.taskStartTime
-        : 0;
-
       this.isRunning = false;
       this.taskStartTime = null;
     }

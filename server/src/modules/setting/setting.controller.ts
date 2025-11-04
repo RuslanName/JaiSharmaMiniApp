@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   Param,
   Patch,
   Query,
@@ -34,6 +35,7 @@ export class SettingController {
   }
 
   @Get('key/:key')
+  @Header('Cache-Control', 'public, max-age=60')
   async findByKey(@Param('key') key: string) {
     return await this.settingService.findByKey(key);
   }

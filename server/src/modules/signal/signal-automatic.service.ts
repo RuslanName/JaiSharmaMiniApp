@@ -151,6 +151,7 @@ export class SignalAutomaticService {
   private async getEligibleUsers(recoveryTimeMinutes: number): Promise<User[]> {
     const users = await this.userRepository.find({
       where: { is_access_allowed: true },
+      relations: ['password'],
     });
 
     const now = new Date();
@@ -158,6 +159,10 @@ export class SignalAutomaticService {
 
     for (const user of users) {
       if (user.energy < 1) {
+        continue;
+      }
+
+      if (!user.password) {
         continue;
       }
 

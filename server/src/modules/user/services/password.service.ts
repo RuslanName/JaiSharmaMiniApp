@@ -191,7 +191,6 @@ export class PasswordService {
       let attempts = 0;
       const maxAttempts = 100;
 
-      // Проверяем уникальность пароля
       while (attempts < maxAttempts) {
         const existing = await this.passwordRepository.findOne({
           where: { password },

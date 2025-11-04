@@ -89,15 +89,12 @@ export const SignalsEdit = (props: EditProps<Signal>) => (
                     optionValue="id"
                     validate={required('Пользователь обязателен')}
                     format={(value) => {
-                        // Преобразуем user объект в user_id
                         if (typeof value === 'object' && value !== null && 'id' in value) {
                             return (value as any).id;
                         }
-                        // null преобразуем в пустую строку для совместимости с MUI Select
                         return value === null || value === undefined ? '' : value;
                     }}
                     parse={(value) => {
-                        // Пустую строку преобразуем в null для отправки на сервер (если нужно)
                         return value === '' ? null : value;
                     }}
                 />
@@ -129,15 +126,12 @@ export const SignalsCreate = (props: CreateProps<Signal>) => (
                     optionValue="id"
                     validate={required('Пользователь обязателен')}
                     format={(value) => {
-                        // Преобразуем user объект в user_id
                         if (typeof value === 'object' && value !== null && 'id' in value) {
                             return (value as any).id;
                         }
-                        // null преобразуем в пустую строку для совместимости с MUI Select
                         return value === null || value === undefined ? '' : value;
                     }}
                     parse={(value) => {
-                        // Пустую строку преобразуем в null для отправки на сервер (если нужно)
                         return value === '' ? null : value;
                     }}
                 />

@@ -17,13 +17,12 @@ export class SignalExpirationService {
   @Cron(CronExpression.EVERY_10_SECONDS)
   async handleSignalExpiration() {
     try {
-      // ---------- ACTIVE ----------
       const signalConfirmTimeoutSetting = await this.settingService.findByKey(
         'signal_confirm_timeout',
       );
       const signalConfirmTimeout = signalConfirmTimeoutSetting
         ? parseInt(signalConfirmTimeoutSetting.value as string, 10)
-        : 30; // seconds
+        : 30;
 
       const now = new Date();
       const activeExpiration = new Date(

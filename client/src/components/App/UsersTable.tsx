@@ -145,15 +145,12 @@ export const UsersEdit = (props: EditProps<User>) => (
                     optionValue="id"
                     emptyText="Без пароля"
                     format={(value) => {
-                        // Преобразуем password объект в password_id
                         if (typeof value === 'object' && value !== null && 'id' in value) {
                             return (value as any).id;
                         }
-                        // null преобразуем в пустую строку для совместимости с MUI Select
                         return value === null || value === undefined ? '' : value;
                     }}
                     parse={(value) => {
-                        // Пустую строку преобразуем в null для отправки на сервер
                         return value === '' ? null : value;
                     }}
                 />

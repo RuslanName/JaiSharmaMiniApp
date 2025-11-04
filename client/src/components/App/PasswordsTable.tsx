@@ -168,15 +168,12 @@ export const PasswordsEdit = (props: EditProps<Password>) => (
                     optionValue="id"
                     emptyText="Без пользователя"
                     format={(value) => {
-                        // Преобразуем user объект в user_id
                         if (typeof value === 'object' && value !== null && 'id' in value) {
                             return (value as any).id;
                         }
-                        // null преобразуем в пустую строку для совместимости с MUI Select
                         return value === null || value === undefined ? '' : value;
                     }}
                     parse={(value) => {
-                        // Пустую строку преобразуем в null для отправки на сервер
                         return value === '' ? null : value;
                     }}
                 />
@@ -198,15 +195,12 @@ export const PasswordsCreate = (props: CreateProps<Password>) => (
                     optionValue="id"
                     emptyText="Без пользователя"
                     format={(value) => {
-                        // Преобразуем user объект в user_id
                         if (typeof value === 'object' && value !== null && 'id' in value) {
                             return (value as any).id;
                         }
-                        // null преобразуем в пустую строку для совместимости с MUI Select
                         return value === null || value === undefined ? '' : value;
                     }}
                     parse={(value) => {
-                        // Пустую строку преобразуем в null для отправки на сервер
                         return value === '' ? null : value;
                     }}
                 />

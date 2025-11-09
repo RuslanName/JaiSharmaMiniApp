@@ -4,7 +4,7 @@ import { Repository, LessThanOrEqual } from 'typeorm';
 import { Signal } from './signal.entity';
 import { SettingService } from '../setting/setting.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { SignalStatus } from '../../enums/signal-status.enum';
+import { SignalStatus } from '../../enums';
 
 @Injectable()
 export class SignalExpirationService {

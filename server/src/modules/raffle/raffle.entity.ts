@@ -5,7 +5,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { IsEnum } from 'class-validator';
-import { RaffleStatus } from '../../enums/raffle-status.enum';
+import { RaffleStatus } from '../../enums';
 
 @Entity('raffles')
 export class Raffle {

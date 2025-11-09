@@ -289,9 +289,6 @@ export class RoundService {
         this.isRunning = false;
         this.taskStartTime = null;
       } else {
-        this.logger.warn(
-          `Previous task still running (${Math.round(runningDuration / 1000)}s), skipping`,
-        );
         return;
       }
     }
@@ -371,11 +368,7 @@ export class RoundService {
                 : null,
             });
 
-            if (!useHeadless) {
-              this.logger.warn(
-                'Running in NON-HEADLESS mode (visible browser). For VPS, set PUPPETEER_HEADLESS=true',
-              );
-            } else {
+            if (useHeadless) {
               this.logger.log(
                 'Running in HEADLESS mode with enhanced anti-detection',
               );
@@ -1401,9 +1394,6 @@ export class RoundService {
                       `Failed to delete old rounds: ${deleteError instanceof Error ? deleteError.message : String(deleteError)}`,
                     );
                   });
-                this.logger.debug(
-                  `Deleted ${toDelete.length} old rounds (total was: ${total})`,
-                );
               }
             }
           } catch (cleanupError) {

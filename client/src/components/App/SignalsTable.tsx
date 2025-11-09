@@ -24,7 +24,6 @@ const signalFilters = [
     <NumberInput source="id" label="ID" />,
     <TextInput source="user_id" label="Пользователь (Имя или ID)" alwaysOn />,
     <NumberInput source="multiplier" label="Мультипликатор" />,
-    <NumberInput source="amount" label="Сумма" />,
     <TextInput source="status" label="Статус" />,
 ];
 
@@ -33,7 +32,6 @@ export const SignalsList = (props: ListProps<Signal>) => (
         <Datagrid rowClick="edit">
             <TextField source="id" label="ID" />
             <TextField source="multiplier" label="Мультипликатор" />
-            <TextField source="amount" label="Сумма" />
             <FunctionField
                 label="Статус"
                 render={(record: Signal) => SignalStatus[record.status as keyof typeof SignalStatus] || 'Неизвестно'}
@@ -71,7 +69,6 @@ export const SignalsEdit = (props: EditProps<Signal>) => (
     <Edit {...props} title="Редактирование сигнала">
         <SimpleForm>
             <NumberInput source="multiplier" label="Мультипликатор" validate={required('Мультипликатор обязателен')} />
-            <NumberInput source="amount" label="Сумма" validate={required('Сумма обязательна')} />
             <SelectInput
                 source="status"
                 label="Статус"
@@ -107,7 +104,6 @@ export const SignalsCreate = (props: CreateProps<Signal>) => (
     <Create {...props} title="Создание сигнала">
         <SimpleForm>
             <NumberInput source="multiplier" label="Мультипликатор" validate={required('Мультипликатор обязателен')} />
-            <NumberInput source="amount" label="Сумма" validate={required('Сумма обязательна')} />
             <SelectInput
                 source="status"
                 label="Статус"

@@ -16,6 +16,7 @@ import type {Setting} from '@/interfaces';
 import { SettingNameTranslations } from '@/providers/settingsProvider';
 import { SettingKey } from '@/enums';
 import { SignalRequestRangesInput } from './SignalRequestRangesInput';
+import { TopWinnersDistributionInput } from './TopWinnersDistributionInput';
 
 const SettingEditToolbar = () => (
     <Toolbar>
@@ -31,6 +32,21 @@ const formatValue = (record: Setting): string => {
                 : record.value;
             if (Array.isArray(parsed)) {
                 return parsed.map((r: {start: string; end: string}) => `${r.start}-${r.end}`).join(', ') || 'Нет диапазонов';
+            }
+        } catch (e) {}
+    }
+    if (record.key === 'top_winners_distribution') {
+        try {
+            const parsed = typeof record.value === 'string' 
+                ? JSON.parse(record.value) 
+                : record.value;
+            if (parsed && typeof parsed === 'object') {
+                const parts = [];
+                if (parsed.BANGLADESH) parts.push(`Бангладеш: ${parsed.BANGLADESH}%`);
+                if (parsed.PAKISTAN) parts.push(`Пакистан: ${parsed.PAKISTAN}%`);
+                if (parsed.SRI_LANKA) parts.push(`Шри-Ланка: ${parsed.SRI_LANKA}%`);
+                if (parsed.INDIA) parts.push(`Индия: ${parsed.INDIA}%`);
+                return parts.join(', ') || 'Не настроено';
             }
         } catch (e) {}
     }
@@ -56,12 +72,18 @@ export const SettingsList = (props: ListProps<Setting>) => (
 const SettingsEditForm = () => {
     const record = useRecordContext<Setting>();
     const isSignalRequestRanges = record?.key === 'signal_request_ranges';
+    const isTopWinnersDistribution = record?.key === 'top_winners_distribution';
 
     return (
         <SimpleForm toolbar={<SettingEditToolbar />}>
             <TextInput source="key" disabled label={SettingNameTranslations.key} />
             {isSignalRequestRanges ? (
                 <SignalRequestRangesInput 
+                    source="value" 
+                    label={SettingNameTranslations.value}
+                />
+            ) : isTopWinnersDistribution ? (
+                <TopWinnersDistributionInput 
                     source="value" 
                     label={SettingNameTranslations.value}
                 />

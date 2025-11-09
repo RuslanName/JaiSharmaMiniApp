@@ -183,7 +183,7 @@ export class PasswordService {
   async generateMany(
     generatePasswordsDto: GeneratePasswordsDto,
   ): Promise<{ data: Password[]; count: number }> {
-    const { count } = generatePasswordsDto;
+    const { count, website_url } = generatePasswordsDto;
     const passwords: Password[] = [];
 
     for (let i = 0; i < count; i++) {
@@ -204,7 +204,7 @@ export class PasswordService {
 
       const passwordEntity = this.passwordRepository.create({
         password,
-        website_url: '',
+        website_url,
         user: null,
       });
       passwords.push(passwordEntity);

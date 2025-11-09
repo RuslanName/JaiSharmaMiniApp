@@ -10,6 +10,7 @@ import { RoundModule } from '../round/round.module';
 import { SignalExpirationService } from './signal-expiration.service';
 import { SignalAutomaticService } from './signal-automatic.service';
 import { BotModule } from '../bot/bot.module';
+import { TopWinnerSignalModule } from '../top-winner-signal/top-winner-signal.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { BotModule } from '../bot/bot.module';
     SettingModule,
     RoundModule,
     BotModule,
+    TopWinnerSignalModule,
   ],
   controllers: [SignalController],
   providers: [SignalService, SignalExpirationService, SignalAutomaticService],

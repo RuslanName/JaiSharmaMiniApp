@@ -11,10 +11,6 @@ export class SignalFilterDto {
 
   @IsOptional()
   @IsNumber()
-  amount?: number;
-
-  @IsOptional()
-  @IsNumber()
   status?: string;
 
   @IsOptional()

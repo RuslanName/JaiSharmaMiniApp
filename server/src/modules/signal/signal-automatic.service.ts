@@ -1,14 +1,14 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Cron } from '@nestjs/schedule';
 import { Signal } from './signal.entity';
 import { User } from '../user/entities/user.entity';
 import { SettingService } from '../setting/setting.service';
 import { BotService } from '../bot/bot.service';
 import { SignalService } from './signal.service';
-import { SignalStatus } from '../../enums/signal-status.enum';
-import { TimeRange } from '../../interfaces/time-range.interface';
+import { SignalStatus } from '../../enums';
+import { TimeRange } from '../../interfaces';
 
 @Injectable()
 export class SignalAutomaticService {
@@ -70,9 +70,9 @@ export class SignalAutomaticService {
         maxUsers,
       );
 
-      for (const user of usersToReceiveRequest) {
-        await this.createRequestSignal(user);
-      }
+      await Promise.allSettled(
+        usersToReceiveRequest.map((user) => this.createRequestSignal(user)),
+      );
     } catch (error: unknown) {
       console.log(
         `Error in automatic signal request distribution: ${
@@ -149,54 +149,34 @@ export class SignalAutomaticService {
   }
 
   private async getEligibleUsers(recoveryTimeMinutes: number): Promise<User[]> {
-    const users = await this.userRepository.find({
-      where: { is_access_allowed: true },
-      relations: ['password'],
-    });
-
     const now = new Date();
-    const eligibleUsers: User[] = [];
+    const recoveryTimeMs = recoveryTimeMinutes * 60 * 1000;
+    const recoveryThreshold = new Date(now.getTime() - recoveryTimeMs);
 
-    for (const user of users) {
-      if (user.energy < 1) {
-        continue;
-      }
-
-      if (!user.password) {
-        continue;
-      }
-
-      const activeSignals = await this.signalRepository.count({
-        where: {
-          user: { id: user.id },
-          status: SignalStatus.ACTIVE,
+    return await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.password', 'password')
+      .leftJoin(
+        'user.signals',
+        'signal',
+        'signal.status IN (:...activeStatuses)',
+        {
+          activeStatuses: [SignalStatus.ACTIVE, SignalStatus.PENDING],
         },
-      });
-
-      const pendingSignals = await this.signalRepository.count({
-        where: {
-          user: { id: user.id },
-          status: SignalStatus.PENDING,
-        },
-      });
-
-      if (activeSignals > 0 || pendingSignals > 0) {
-        continue;
-      }
-
-      if (user.last_signal_request_at) {
-        const diffMs = now.getTime() - user.last_signal_request_at.getTime();
-        const diffMinutes = diffMs / (1000 * 60);
-
-        if (diffMinutes < recoveryTimeMinutes) {
-          continue;
-        }
-      }
-
-      eligibleUsers.push(user);
-    }
-
-    return eligibleUsers;
+      )
+      .where('user.is_access_allowed = :isAccessAllowed', {
+        isAccessAllowed: true,
+      })
+      .andWhere('user.energy >= :minEnergy', { minEnergy: 1 })
+      .andWhere('password.id IS NOT NULL')
+      .andWhere(
+        '(user.last_signal_request_at IS NULL OR user.last_signal_request_at <= :recoveryThreshold)',
+        { recoveryThreshold },
+      )
+      .groupBy('user.id')
+      .addGroupBy('password.id')
+      .having('COUNT(signal.id) = 0')
+      .getMany();
   }
 
   private selectRandomUsers(users: User[], count: number): User[] {
@@ -206,51 +186,47 @@ export class SignalAutomaticService {
 
   private async createRequestSignal(user: User): Promise<void> {
     try {
-      const savedSignal = await this.dataSource.transaction(
-        'SERIALIZABLE',
-        async (manager) => {
-          const userEntity = await manager
-            .createQueryBuilder(User, 'user')
-            .where('user.id = :userId', { userId: user.id })
-            .setLock('pessimistic_write')
-            .getOne();
+      const savedSignal = await this.dataSource.transaction(async (manager) => {
+        const userEntity = await manager
+          .createQueryBuilder(User, 'user')
+          .where('user.id = :userId', { userId: user.id })
+          .setLock('pessimistic_write')
+          .getOne();
 
-          if (!userEntity) {
-            return null;
-          }
+        if (!userEntity) {
+          return null;
+        }
 
-          const existingSignal = await manager
-            .createQueryBuilder(Signal, 'signal')
-            .innerJoin('signal.user', 'user')
-            .where('user.id = :userId', { userId: user.id })
-            .andWhere('signal.status IN (:...statuses)', {
-              statuses: [SignalStatus.ACTIVE, SignalStatus.PENDING],
-            })
-            .setLock('pessimistic_write')
-            .getOne();
+        const existingSignal = await manager
+          .createQueryBuilder(Signal, 'signal')
+          .innerJoin('signal.user', 'user')
+          .where('user.id = :userId', { userId: user.id })
+          .andWhere('signal.status IN (:...statuses)', {
+            statuses: [SignalStatus.ACTIVE, SignalStatus.PENDING],
+          })
+          .setLock('pessimistic_write')
+          .getOne();
 
-          if (existingSignal) {
-            return null;
-          }
+        if (existingSignal) {
+          return null;
+        }
 
-          await manager.update(
-            User,
-            { id: user.id },
-            {
-              last_signal_request_at: new Date(),
-            },
-          );
+        await manager.update(
+          User,
+          { id: user.id },
+          {
+            last_signal_request_at: new Date(),
+          },
+        );
 
-          const signal = manager.create(Signal, {
-            multiplier: 0,
-            amount: 0,
-            status: SignalStatus.PENDING,
-            user: { id: user.id },
-          });
+        const signal = manager.create(Signal, {
+          multiplier: 0,
+          status: SignalStatus.PENDING,
+          user: { id: user.id },
+        });
 
-          return await manager.save(Signal, signal);
-        },
-      );
+        return await manager.save(Signal, signal);
+      });
 
       if (!savedSignal) {
         return;

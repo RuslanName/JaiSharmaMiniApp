@@ -5,7 +5,7 @@ const ProgressBar: React.FC = () => {
     const { user } = useAuthStore();
     const energy = user?.energy || 0;
     const maxEnergy = user?.maxEnergy || 0;
-    const progress = (energy / maxEnergy) * 100;
+    const progress = Math.min((energy / maxEnergy) * 100, 100);
 
     return (
         <div className="mt-[16px]">

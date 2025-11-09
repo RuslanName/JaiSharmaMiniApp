@@ -38,18 +38,18 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({ onAddEnergy }) => {
                     <span className="text-white font-semibold text-[14px]">{password}</span>
                 </div>
             </div>
-            <div className="rounded-full px-[9px] flex items-center justify-center gap-[8px] py-[5px] border-1 border-[#FFFFFF0D] bg-[#8989890D]">
+            <button
+                onClick={onAddEnergy}
+                className="rounded-full px-[9px] flex items-center justify-center gap-[8px] py-[5px] border-1 border-[#FFFFFF0D] bg-[#8989890D] cursor-pointer"
+            >
                 <img src={Energy} alt="energy" />
                 <div className="text-[14px] font-semibold">
-                    <span className="font-thin">{energy}</span>/{maxEnergy}
+                    <span className="font-bold">{energy}</span>/{maxEnergy}
                 </div>
-                <button
-                    onClick={onAddEnergy}
-                    className="w-[19px] h-[19px] flex items-center justify-center"
-                >
+                <div className="w-[19px] h-[19px] flex items-center justify-center">
                     <img src={AddButton} alt="Add" className="w-full h-full" />
-                </button>
-            </div>
+                </div>
+            </button>
         </div>
     );
 };

@@ -1,8 +1,8 @@
 import React from 'react';
-import type {MiniAppUser} from '@/interfaces';
+import type {TopWinnerSignal} from '@/interfaces';
 
 interface WinnerCardProps {
-    winner: MiniAppUser;
+    winner: TopWinnerSignal;
 }
 
 const WinnerCard: React.FC<WinnerCardProps> = ({ winner }) => {
@@ -26,10 +26,10 @@ const WinnerCard: React.FC<WinnerCardProps> = ({ winner }) => {
 
                 <div className="flex flex-col items-end gap-[2px] min-w-0 flex-shrink-0 w-[64px]">
                     <span className="text-[24px] font-bold text-white uppercase leading-[36px] whitespace-nowrap">
-                        {winner.best_signal?.multiplier || 'N/A'}x
+                        {winner.multiplier || 'N/A'}x
                     </span>
                     <span className="text-[12px] font-medium text-[#F4C91C] uppercase leading-[18px] whitespace-nowrap">
-                        +{winner.best_signal?.amount || '0'} INR
+                        +{((winner.amount || 0) * (winner.multiplier || 1)).toFixed(0)} {winner.currency || 'INR'}
                     </span>
                 </div>
             </div>

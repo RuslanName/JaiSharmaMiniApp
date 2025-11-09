@@ -1,14 +1,10 @@
-import { IsEnum, IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
-import { SignalStatus } from '../../../enums/signal-status.enum';
+import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { SignalStatus } from '../../../enums';
 
 export class UpdateSignalDto {
   @IsNumber()
   @IsOptional()
   multiplier: number;
-
-  @IsInt()
-  @IsOptional()
-  amount: number;
 
   @IsString()
   @IsEnum(SignalStatus)

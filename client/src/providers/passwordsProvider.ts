@@ -19,7 +19,7 @@ const passwordsProvider = {
             },
         };
     },
-    generateMany: async (resource: any, params: { data: { count: number } }) => {
+    generateMany: async (resource: any, params: { data: { count: number; website_url: string } }) => {
         const token = useAuthStore.getState().token;
         const response = await api.post(`/${resource}/generate`, params.data, {
             headers: { Authorization: `Bearer ${token}` },

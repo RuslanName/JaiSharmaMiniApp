@@ -7,7 +7,7 @@ import {
 } from 'typeorm';
 import { User } from '../user/entities/user.entity';
 import { IsEnum } from 'class-validator';
-import { SignalStatus } from '../../enums/signal-status.enum';
+import { SignalStatus } from '../../enums';
 
 @Entity('signals')
 export class Signal {
@@ -16,9 +16,6 @@ export class Signal {
 
   @Column({ type: 'float' })
   multiplier: number;
-
-  @Column()
-  amount: number;
 
   @Column({ default: SignalStatus.PENDING })
   @IsEnum(SignalStatus)

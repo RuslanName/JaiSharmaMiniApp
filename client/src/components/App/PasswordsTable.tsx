@@ -29,6 +29,7 @@ import {
     Button as MuiButton,
     Box,
     Slider,
+    TextField as MuiTextField,
 } from '@mui/material';
 import type {Password, User} from '@/interfaces';
 import { required } from 'react-admin';
@@ -43,18 +44,28 @@ const passwordFilters = [
 const GeneratePasswordsButton = () => {
     const [open, setOpen] = useState(false);
     const [count, setCount] = useState(1);
+    const [websiteUrl, setWebsiteUrl] = useState('');
     const dataProvider = useDataProvider();
     const notify = useNotify();
     const refresh = useRefresh();
 
+    const handleClose = () => {
+        setOpen(false);
+        setWebsiteUrl('');
+        setCount(1);
+    };
+
     const handleGenerate = async () => {
+        if (!websiteUrl.trim()) {
+            notify('Пожалуйста, укажите URL сайта', { type: 'error' });
+            return;
+        }
         try {
             await dataProvider.generateMany('passwords', {
-                data: { count },
+                data: { count, website_url: websiteUrl.trim() },
             });
             notify(`Успешно сгенерировано ${count} паролей`, { type: 'success' });
-            setOpen(false);
-            setCount(1);
+            handleClose();
             refresh();
         } catch (error) {
             notify('Ошибка при генерации паролей', { type: 'error' });
@@ -70,13 +81,24 @@ const GeneratePasswordsButton = () => {
             >
                 Сгенерировать пароли
             </MuiButton>
-            <Dialog open={open} onClose={() => setOpen(false)}>
+            <Dialog open={open} onClose={handleClose}>
                 <DialogTitle>Генерация паролей</DialogTitle>
                 <DialogContent sx={{ overflow: 'hidden' }}>
                     <Box sx={{ paddingTop: 2, minWidth: 400, maxWidth: 450 }}>
                         <Typography variant="body2" sx={{ marginBottom: 3 }}>
                             Пароли будут состоять из заглавных латинских букв и цифр (8 символов)
                         </Typography>
+                        
+                        <Box sx={{ mb: 3 }}>
+                            <MuiTextField
+                                label="URL сайта"
+                                value={websiteUrl}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWebsiteUrl(e.target.value)}
+                                fullWidth
+                                required
+                                variant="outlined"
+                            />
+                        </Box>
                         
                         <Box sx={{ mb: 2, px: 1 }}>
                             <Typography gutterBottom>
@@ -101,7 +123,7 @@ const GeneratePasswordsButton = () => {
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <MuiButton onClick={() => setOpen(false)}>Отмена</MuiButton>
+                    <MuiButton onClick={handleClose}>Отмена</MuiButton>
                     <MuiButton
                         onClick={handleGenerate}
                         variant="contained"

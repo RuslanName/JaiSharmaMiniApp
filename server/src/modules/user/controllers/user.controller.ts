@@ -42,12 +42,6 @@ export class UserController {
     return await this.userService.findOne(userId);
   }
 
-  @Get('leaderboard')
-  @Header('Cache-Control', 'public, max-age=180')
-  async getLeaderboard(@Query() paginationDto: PaginationDto) {
-    return await this.userService.getLeaderboard(paginationDto);
-  }
-
   @Get(':id')
   @Roles('admin')
   async findOne(@Param('id') id: string) {

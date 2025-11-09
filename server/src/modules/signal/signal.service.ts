@@ -10,8 +10,9 @@ import { SignalFilterDto } from './dtos/signal-filter.dto';
 import { RoundService } from '../round/round.service';
 import { SettingService } from '../setting/setting.service';
 import { BotService } from '../bot/bot.service';
-import { SignalStatus } from '../../enums/signal-status.enum';
+import { SignalStatus } from '../../enums';
 import { config } from '../../config/constants';
+import { TopWinnerSignalGenerationService } from '../top-winner-signal/top-winner-signal-generation.service';
 
 @Injectable()
 export class SignalService {
@@ -23,6 +24,7 @@ export class SignalService {
     private roundService: RoundService,
     private settingService: SettingService,
     private botService: BotService,
+    private topWinnerSignalGenerationService: TopWinnerSignalGenerationService,
   ) {}
 
   async findAll(
@@ -38,7 +40,6 @@ export class SignalService {
     };
     if (filterDto.id) where.id = filterDto.id;
     if (filterDto.multiplier) where.multiplier = filterDto.multiplier;
-    if (filterDto.amount) where.amount = filterDto.amount;
     if (filterDto.status) where.status = filterDto.status;
     if (filterDto.user_id) {
       const userId = parseInt(filterDto.user_id, 10);
@@ -283,6 +284,15 @@ export class SignalService {
 
     signal.status = SignalStatus.COMPLETED;
     await this.signalRepository.save(signal);
+
+    try {
+      await this.topWinnerSignalGenerationService.generateTopWinnerSignal(
+        signal.multiplier,
+      );
+    } catch (error) {
+      console.error('Error generating top winner signal:', error);
+    }
+
     return signal;
   }
 

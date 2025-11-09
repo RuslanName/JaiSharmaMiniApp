@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThanOrEqual } from 'typeorm';
 import { Raffle } from './raffle.entity';
 import { User } from '../user/entities/user.entity';
-import { RaffleStatus } from '../../enums/raffle-status.enum';
+import { RaffleStatus } from '../../enums';
 import { Telegraf } from 'telegraf';
 import { config } from '../../config/constants';
 import { Cron, CronExpression } from '@nestjs/schedule';

@@ -7,9 +7,9 @@ import { UpdateUserDto } from '../dtos/user/update-user.dto';
 import { CreateUserDto } from '../dtos/user/create-user.dto';
 import { PaginationDto } from '../../../common/pagination.dto';
 import { UserFilterDto } from '../dtos/user/user-filter.dto';
-import { UserWithMaxEnergy } from '../../../interfaces/user-with-max-energy.interface';
+import { UserWithMaxEnergy } from '../../../interfaces';
 import { SettingService } from '../../setting/setting.service';
-import { SignalStatus } from '../../../enums/signal-status.enum';
+import { SignalStatus } from '../../../enums';
 
 @Injectable()
 export class UserService {
@@ -135,53 +135,6 @@ export class UserService {
     const maxEnergy = maxEnergySetting ? Number(maxEnergySetting.value) : 5;
 
     return { ...user, maxEnergy };
-  }
-
-  async getLeaderboard(
-    paginationDto: PaginationDto,
-  ): Promise<{ data: any[]; total: number }> {
-    const { page = 1, limit = 10 } = paginationDto;
-    const skip = (page - 1) * limit;
-
-    const [data] = await this.userRepository.findAndCount({
-      order: { energy: 'DESC' },
-      skip,
-      take: limit,
-      relations: ['password', 'signals'],
-    });
-
-    const maxEnergySetting = await this.settingService.findByKey('max_energy');
-    const maxEnergy = maxEnergySetting ? Number(maxEnergySetting.value) : 100;
-
-    const enrichedData = data
-      .map((user) => {
-        const completedSignals = user.signals.filter(
-          (signal) =>
-            (signal.status as SignalStatus) === SignalStatus.COMPLETED,
-        );
-
-        if (completedSignals.length === 0) {
-          return null;
-        }
-
-        const bestSignal = completedSignals.reduce(
-          (max, signal) => (signal.amount > max.amount ? signal : max),
-          completedSignals[0],
-        );
-
-        if (bestSignal.amount <= 0) {
-          return null;
-        }
-
-        return {
-          ...user,
-          maxEnergy,
-          best_signal: bestSignal,
-        };
-      })
-      .filter((item): item is NonNullable<typeof item> => item !== null);
-
-    return { data: enrichedData, total: enrichedData.length };
   }
 
   async delete(id: number): Promise<void> {

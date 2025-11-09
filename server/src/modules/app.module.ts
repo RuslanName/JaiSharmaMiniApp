@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { BotModule } from './bot/bot.module';
 import { SettingModule } from './setting/setting.module';
 import { RoundModule } from './round/round.module';
+import { TopWinnerSignalModule } from './top-winner-signal/top-winner-signal.module';
 
 const isDev = config.MODE === 'dev';
 
@@ -30,6 +31,7 @@ const isDev = config.MODE === 'dev';
     RoundModule,
     SettingModule,
     SignalModule,
+    TopWinnerSignalModule,
     UserModule,
   ],
 })

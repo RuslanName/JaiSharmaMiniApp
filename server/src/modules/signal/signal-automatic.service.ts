@@ -16,8 +16,6 @@ export class SignalAutomaticService {
   private readonly lockKey = 'signal_distribution_lock';
 
   constructor(
-    @InjectRepository(Signal)
-    private signalRepository: Repository<Signal>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private settingService: SettingService,
@@ -27,7 +25,7 @@ export class SignalAutomaticService {
     private dataSource: DataSource,
   ) {}
 
-  @Cron('*/1 * * * *')
+  @Cron('*/15 * * * *')
   async distributeSignalRequests() {
     if (this.isRunning) {
       return;

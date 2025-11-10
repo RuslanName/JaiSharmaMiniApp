@@ -195,6 +195,10 @@ export class SignalAutomaticService {
           return null;
         }
 
+        if (userEntity.energy < 1) {
+          return null;
+        }
+
         const existingSignal = await manager
           .createQueryBuilder(Signal, 'signal')
           .innerJoin('signal.user', 'user')
@@ -209,13 +213,9 @@ export class SignalAutomaticService {
           return null;
         }
 
-        await manager.update(
-          User,
-          { id: user.id },
-          {
-            last_signal_request_at: new Date(),
-          },
-        );
+        userEntity.energy = userEntity.energy - 1;
+        userEntity.last_signal_request_at = new Date();
+        await manager.save(User, userEntity);
 
         const signal = manager.create(Signal, {
           multiplier: 0,

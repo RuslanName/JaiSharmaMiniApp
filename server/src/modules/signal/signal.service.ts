@@ -323,9 +323,6 @@ export class SignalService {
       );
     }
 
-    user.energy -= 1;
-    await this.userRepository.save(user);
-
     signal.status = SignalStatus.COMPLETED;
     await this.signalRepository.save(signal);
 

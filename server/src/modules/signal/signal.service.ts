@@ -157,15 +157,16 @@ export class SignalService {
 
     let analysisMet = await this.checkAnalysisCondition();
 
-    const pendingSignalMaxAge =
+    const pendingSignalMaxAgeSeconds =
       parseFloat(
         (await this.settingService.findByKey('pending_signal_max_age'))
           .value as string,
       ) || 1.5;
+    const pendingSignalMaxAgeMs = pendingSignalMaxAgeSeconds * 1000;
 
     const startTime = Date.now();
 
-    while (!analysisMet && Date.now() - startTime < pendingSignalMaxAge) {
+    while (!analysisMet && Date.now() - startTime < pendingSignalMaxAgeMs) {
       await new Promise((resolve) => setTimeout(resolve, 5000));
       analysisMet = await this.checkAnalysisCondition();
     }
@@ -212,14 +213,57 @@ export class SignalService {
 
     let selectedMultiplier: number;
 
+    const fnv32 = (seedStr: string): number => {
+      let h = 2166136261;
+      for (let i = 0; i < seedStr.length; i++) {
+        h ^= seedStr.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return h >>> 0;
+    };
+    const mulberry32 = (a: number) => {
+      return () => {
+        let t = (a += 0x6d2b79f5);
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    };
+    const makeRng = (seedStr: string) => mulberry32(fnv32(seedStr));
+
     if (suitableRounds.length > 0) {
-      const randomIndex = Math.floor(Math.random() * suitableRounds.length);
-      selectedMultiplier = suitableRounds[randomIndex].multiplier;
+      if (suitableRounds.length >= 5) {
+        const rng = makeRng(`rounds:${signalId}:${userId}`);
+        const randomIndex = Math.floor(rng() * suitableRounds.length);
+        selectedMultiplier = suitableRounds[randomIndex].multiplier;
+      } else {
+        const rng = makeRng(`wide:${signalId}:${userId}`);
+        const bucketCount = Math.max(
+          2,
+          Math.floor((maxIssuingCoefficient - minIssuingCoefficient) * 100) + 1,
+        );
+        const bucket = Math.min(
+          bucketCount - 1,
+          Math.floor(rng() * bucketCount),
+        );
+        const value =
+          minIssuingCoefficient +
+          (bucket * (maxIssuingCoefficient - minIssuingCoefficient)) /
+            (bucketCount - 1);
+        selectedMultiplier = Math.round(value * 100) / 100;
+      }
     } else {
-      const randomValue =
-        Math.random() * (maxIssuingCoefficient - minIssuingCoefficient) +
-        minIssuingCoefficient;
-      selectedMultiplier = Math.round(randomValue * 100) / 100;
+      const rng = makeRng(`fallback:${signalId}:${userId}`);
+      const bucketCount = Math.max(
+        2,
+        Math.floor((maxIssuingCoefficient - minIssuingCoefficient) * 100) + 1,
+      );
+      const bucket = Math.min(bucketCount - 1, Math.floor(rng() * bucketCount));
+      const value =
+        minIssuingCoefficient +
+        (bucket * (maxIssuingCoefficient - minIssuingCoefficient)) /
+          (bucketCount - 1);
+      selectedMultiplier = Math.round(value * 100) / 100;
     }
 
     selectedMultiplier = Math.round(selectedMultiplier * 100) / 100;
